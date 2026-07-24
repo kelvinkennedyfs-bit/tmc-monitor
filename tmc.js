@@ -1,954 +1,1490 @@
 (function () {
   'use strict';
 
-  // ─────────────────────────────────────────────
-  //  CONSTANTES
-  // ─────────────────────────────────────────────
-  const PANEL_ID        = '__TMC_MONITOR_PANEL__';
-  const PREFS_KEY       = '__TMC_PREFS__';
-  const BASE_URL        = 'https://logistics.adminml.com';
-  const AUTO_REFRESH_S  = 60; // segundos entre refreshes automáticos
+  // ─── CONSTANTES ───────────────────────────────────────────────────────────────
+  const PANEL_ID = '__TMC_PANEL__';
+  const PREFS_KEY = '__TMC_PREFS__';
+  const BASE_URL = 'https://logistics.adminml.com';
+  const AUTO_REFRESH_S = 60;
 
-  const FACILITY_OPTIONS   = ['SRJ1','SRJ3','SRJ5','SRJ7','SRJ8','SRJ10','SES1','SES2'];
-  const CYCLES_WITH_WAVES  = ['AM1','AM101','PM1','PM101','SD101'];
-  const SIMPLE_CYCLES      = ['SD','CHP'];
-  const ALL_CYCLES         = [...CYCLES_WITH_WAVES, ...SIMPLE_CYCLES];
-  const TMC_LIMITS         = { green: 30, yellow: 45 };
+  const FACILITY_OPTIONS = ['SRJ1', 'SRJ3', 'SRJ5', 'SRJ7', 'SRJ8', 'SRJ10', 'SES1', 'SES2'];
+  const CYCLES_WITH_WAVES = ['AM1', 'AM101', 'PM1', 'PM101', 'SD101'];
+  const SIMPLE_CYCLES = ['SD', 'CHP'];
+  const ALL_CYCLES = [...CYCLES_WITH_WAVES, ...SIMPLE_CYCLES];
 
-  // ─────────────────────────────────────────────
-  //  I18N
-  // ─────────────────────────────────────────────
+  // Semáforo em minutos
+  const TMC = { green: 20, yellow: 25, lost: 30 };
+
+  // ─── INTERNACIONALIZAÇÃO ──────────────────────────────────────────────────────
   const i18n = {
     PT: {
-      title:       '⏱ TMC Monitor',
-      subtitle:    'Tempo Médio de Carregamento',
-      base:        'Base',
-      language:    'Idioma',
-      refresh:     'Atualizar',
-      autoRefresh: 'Auto-refresh',
-      loading:     'Carregando...',
-      noData:      'Sem dados',
-      error:       'Erro',
-      wave:        'Wave',
-      average:     'Média',
-      lastUpdate:  'Última atualização',
-      next:        'Próx',
-      cycles:      'Ciclos',
-      min:         'min',
-      close:       'Fechar',
+      title: '⏱ TMC',
+      search: '🔍 Buscar rota...',
+      base: 'Base',
+      refresh: '🔄',
+      autoRefresh: 'Auto',
+      next: 'Próx',
+      all: 'TODOS',
+      tabRealtime: '⏱ Tempo Real',
+      tabHistory: '📋 Histórico',
+      tabStats: '📊 TMC Stats',
+      total: 'Total',
+      dock: 'Doca',
+      status: 'Status',
+      statusAll: 'Todos os status',
+      areaAll: 'Todas as áreas',
+      loading: 'Carregando dados...',
+      noData: 'Nenhuma rota encontrada.',
+      statusLoading: 'Carregando',
+      statusCustoms: 'Em aduana',
+      statusDispatched: 'Expedido',
+      statusFinished: 'Finalizado',
+      lostTMC: '💀 PERDEU TMC',
+      colRoute: 'Rota',
+      colDock: 'Doca',
+      colCycle: 'Ciclo',
+      colStatus: 'Status',
+      colTime: 'Tempo',
+      colLight: 'Semáforo',
+      statsTotal: 'Total de Rotas',
+      statsGreen: 'Dentro do TMC',
+      statsYellow: 'Em Atenção',
+      statsRed: 'Crítico',
+      statsLost: 'Perderam TMC',
+      statsAvg: 'Tempo Médio',
+      cycleBreakdown: 'Desempenho por Ciclo',
+      withinTMC: '% no TMC',
+      avgTime: 'Média',
+      routes: 'rotas',
+      minimize: '—',
+      close: '✕',
+      fetching: 'Buscando...',
     },
     EN: {
-      title:       '⏱ TMC Monitor',
-      subtitle:    'Average Loading Time',
-      base:        'Base',
-      language:    'Language',
-      refresh:     'Refresh',
-      autoRefresh: 'Auto-refresh',
-      loading:     'Loading...',
-      noData:      'No data',
-      error:       'Error',
-      wave:        'Wave',
-      average:     'Average',
-      lastUpdate:  'Last update',
-      next:        'Next',
-      cycles:      'Cycles',
-      min:         'min',
-      close:       'Close',
+      title: '⏱ TMC',
+      search: '🔍 Search route...',
+      base: 'Base',
+      refresh: '🔄',
+      autoRefresh: 'Auto',
+      next: 'Next',
+      all: 'ALL',
+      tabRealtime: '⏱ Real Time',
+      tabHistory: '📋 History',
+      tabStats: '📊 TMC Stats',
+      total: 'Total',
+      dock: 'Dock',
+      status: 'Status',
+      statusAll: 'All statuses',
+      areaAll: 'All areas',
+      loading: 'Loading data...',
+      noData: 'No routes found.',
+      statusLoading: 'Loading',
+      statusCustoms: 'In customs',
+      statusDispatched: 'Dispatched',
+      statusFinished: 'Finished',
+      lostTMC: '💀 LOST TMC',
+      colRoute: 'Route',
+      colDock: 'Dock',
+      colCycle: 'Cycle',
+      colStatus: 'Status',
+      colTime: 'Time',
+      colLight: 'Light',
+      statsTotal: 'Total Routes',
+      statsGreen: 'Within TMC',
+      statsYellow: 'Attention',
+      statsRed: 'Critical',
+      statsLost: 'Lost TMC',
+      statsAvg: 'Avg Time',
+      cycleBreakdown: 'Performance by Cycle',
+      withinTMC: '% in TMC',
+      avgTime: 'Avg',
+      routes: 'routes',
+      minimize: '—',
+      close: '✕',
+      fetching: 'Fetching...',
     },
     ES: {
-      title:       '⏱ TMC Monitor',
-      subtitle:    'Tiempo Medio de Carga',
-      base:        'Base',
-      language:    'Idioma',
-      refresh:     'Actualizar',
-      autoRefresh: 'Auto-refresco',
-      loading:     'Cargando...',
-      noData:      'Sin datos',
-      error:       'Error',
-      wave:        'Wave',
-      average:     'Promedio',
-      lastUpdate:  'Última actualización',
-      next:        'Próx',
-      cycles:      'Ciclos',
-      min:         'min',
-      close:       'Cerrar',
+      title: '⏱ TMC',
+      search: '🔍 Buscar ruta...',
+      base: 'Base',
+      refresh: '🔄',
+      autoRefresh: 'Auto',
+      next: 'Próx',
+      all: 'TODOS',
+      tabRealtime: '⏱ Tiempo Real',
+      tabHistory: '📋 Historial',
+      tabStats: '📊 TMC Stats',
+      total: 'Total',
+      dock: 'Muelle',
+      status: 'Estado',
+      statusAll: 'Todos los estados',
+      areaAll: 'Todas las áreas',
+      loading: 'Cargando datos...',
+      noData: 'No se encontraron rutas.',
+      statusLoading: 'Cargando',
+      statusCustoms: 'En aduana',
+      statusDispatched: 'Despachado',
+      statusFinished: 'Finalizado',
+      lostTMC: '💀 PERDIÓ TMC',
+      colRoute: 'Ruta',
+      colDock: 'Muelle',
+      colCycle: 'Ciclo',
+      colStatus: 'Estado',
+      colTime: 'Tiempo',
+      colLight: 'Semáforo',
+      statsTotal: 'Total de Rutas',
+      statsGreen: 'Dentro del TMC',
+      statsYellow: 'Atención',
+      statsRed: 'Crítico',
+      statsLost: 'Perdieron TMC',
+      statsAvg: 'Tiempo Medio',
+      cycleBreakdown: 'Rendimiento por Ciclo',
+      withinTMC: '% en TMC',
+      avgTime: 'Media',
+      routes: 'rutas',
+      minimize: '—',
+      close: '✕',
+      fetching: 'Buscando...',
     },
   };
 
-  // ─────────────────────────────────────────────
-  //  CARREGA / SALVA PREFERÊNCIAS
-  // ─────────────────────────────────────────────
+  // ─── ESTADO GLOBAL ────────────────────────────────────────────────────────────
+  const state = {
+    facilityId: 'SRJ3',
+    lang: 'PT',
+    cicloFiltro: '',
+    statusFiltro: '',
+    gaiolaFiltro: '',
+    searchText: '',
+    tab: 'realtime',
+    data: [],
+    fetchTimestamp: null,
+    autoRefresh: true,
+    countdown: AUTO_REFRESH_S,
+    loading: false,
+    minimized: false,
+    timers: {},        // { route_id: intervalId } — timers dos cards
+    countdownTimer: null,
+    autoRefreshTimer: null,
+  };
+
+  // ─── PREFERÊNCIAS ─────────────────────────────────────────────────────────────
   function loadPrefs() {
     try {
       const raw = localStorage.getItem(PREFS_KEY);
-      return raw ? JSON.parse(raw) : {};
-    } catch (_) { return {}; }
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (p.facilityId) state.facilityId = p.facilityId;
+        if (p.lang) state.lang = p.lang;
+      }
+    } catch (e) { /* ignora */ }
   }
 
   function savePrefs() {
     try {
       localStorage.setItem(PREFS_KEY, JSON.stringify({
         facilityId: state.facilityId,
-        lang:       state.lang,
+        lang: state.lang,
       }));
-    } catch (_) {}
+    } catch (e) { /* ignora */ }
   }
 
-  // ─────────────────────────────────────────────
-  //  STATE
-  // ─────────────────────────────────────────────
-  const savedPrefs = loadPrefs();
+  // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
-  const state = {
-    facilityId:      savedPrefs.facilityId || 'SRJ3',
-    lang:            savedPrefs.lang       || 'PT',
-    /**
-     * Estrutura de dados por ciclo:
-     * {
-     *   [cycle]: {
-     *     status:  'loading' | 'ok' | 'nodata' | 'error',
-     *     waves:   [{ wave: Number, tmc: Number|null }],
-     *     avg:     Number|null,   // média em minutos
-     *     ts:      String,        // timestamp da última atualização
-     *   }
-     * }
-     */
-    data:            {},
-    autoRefresh:     true,
-    countdown:       AUTO_REFRESH_S,
-    timer:           null,   // setInterval do auto-refresh
-    countdownTimer:  null,   // setInterval do countdown visual
-    loading:         false,
-  };
-
-  // Inicializa data com status 'loading' para todos os ciclos
-  ALL_CYCLES.forEach(c => {
-    state.data[c] = { status: 'loading', waves: [], avg: null, ts: null };
-  });
-
-  // ─────────────────────────────────────────────
-  //  HELPERS DE DATA / TEMPO
-  // ─────────────────────────────────────────────
-  function getToday() {
-    // Retorna data atual no formato YYYY-MM-DD
-    return new Date().toISOString().split('T')[0];
+  /** Extrai o ciclo do route_name. Ex: "G11_AM1" → "AM1" */
+  function getCycle(routeName) {
+    if (!routeName) return '';
+    const parts = routeName.split('_');
+    return parts[parts.length - 1] || '';
   }
 
-  function getTimestamp() {
-    // Retorna hora atual HH:MM:SS para exibir no card
-    return new Date().toLocaleTimeString('pt-BR');
+  /** Extrai a gaiola do route_name. Ex: "G11_AM1" → "G11" */
+  function getGaiola(routeName) {
+    if (!routeName) return '';
+    const idx = routeName.lastIndexOf('_');
+    return idx > -1 ? routeName.substring(0, idx) : routeName;
   }
 
-  // ─────────────────────────────────────────────
-  //  SEMÁFORO
-  // ─────────────────────────────────────────────
+  /** Retorna a letra inicial da área. Ex: "G11" → "G" */
+  function getAreaLetter(routeName) {
+    const g = getGaiola(routeName);
+    return g ? g.charAt(0).toUpperCase() : '?';
+  }
+
+  /** Traduz o status do processo */
+  function getStatusLabel(process) {
+    const t = i18n[state.lang];
+    const map = {
+      loading: t.statusLoading,
+      in_customs: t.statusCustoms,
+      dispatched: t.statusDispatched,
+      finished: t.statusFinished,
+    };
+    return map[process] || process;
+  }
+
   /**
-   * Retorna a cor hexadecimal do semáforo para um TMC em minutos.
-   * @param {number|null} tmc
-   * @returns {{ color: string, emoji: string }}
+   * Calcula minutos decorridos atuais para um item.
+   * total_elapsed_time (segundos snapshoted) + delta desde fetchTimestamp
    */
-  function getTrafficLight(tmc) {
-    if (tmc === null || tmc === undefined) return { color: '#64748b', emoji: '⚪' };
-    if (tmc <= TMC_LIMITS.green)  return { color: '#22c55e', emoji: '🟢' };
-    if (tmc <= TMC_LIMITS.yellow) return { color: '#eab308', emoji: '🟡' };
-    return { color: '#ef4444', emoji: '🔴' };
+  function getElapsedMin(item) {
+    const delta = state.fetchTimestamp
+      ? (Date.now() - state.fetchTimestamp) / 1000
+      : 0;
+    const totalSec = (item.total_elapsed_time || 0) + delta;
+    return totalSec / 60;
   }
 
-  // ─────────────────────────────────────────────
-  //  API — WAVES-STATUS
-  // ─────────────────────────────────────────────
-  /**
-   * Busca a lista de waves disponíveis para um ciclo/data.
-   * @param {string} cycle  — ex: 'AM1'
-   * @param {string} date   — ex: '2026-07-24'
-   * @returns {Promise<Array<{wave: number}>>}
-   */
-  async function fetchWaves(cycle, date) {
-    const url = `${BASE_URL}/logistics/last-mile/monitoring/api/ops-clock/waves-status`
-              + `?cycleId=${encodeURIComponent(cycle)}&date=${encodeURIComponent(date)}`;
-    const res = await fetch(url, { credentials: 'include' });
-    if (!res.ok) throw new Error(`waves-status HTTP ${res.status}`);
-    const json = await res.json();
-    // O endpoint retorna um array de objetos com a propriedade `wave`
-    if (!Array.isArray(json) || json.length === 0) return [];
-    return json; // [{ wave: 1 }, { wave: 2 }, ...]
-  }
-
-  // ─────────────────────────────────────────────
-  //  API — DISPATCH
-  // ─────────────────────────────────────────────
-  /**
-   * Busca os dados de dispatch para um ciclo/wave e retorna o TMC em minutos.
-   * @param {string} facilityId
-   * @param {string} cycle
-   * @param {number} wave
-   * @returns {Promise<number|null>}  — TMC em minutos ou null se sem dados
-   */
-  async function fetchDispatch(facilityId, cycle, wave) {
-    const url = `${BASE_URL}/logistics/last-mile/monitoring/frm-provider/api/dispatch`
-              + `?facilityId=${encodeURIComponent(facilityId)}`
-              + `&groupId=${encodeURIComponent(cycle)}`
-              + `&siteId=MLB`
-              + `&wave=${encodeURIComponent(wave)}`;
-    const res = await fetch(url, { credentials: 'include' });
-    if (!res.ok) throw new Error(`dispatch HTTP ${res.status}`);
-    const json = await res.json();
-    // Converte segundos → minutos, 2 casas decimais
-    if (json && typeof json.total_elapsed_time === 'number' && json.total_elapsed_time > 0) {
-      return Math.round((json.total_elapsed_time / 60) * 100) / 100;
+  /** Retorna objeto com info do semáforo */
+  function getTrafficLight(minutes) {
+    if (minutes >= TMC.lost) {
+      return { color: '#7c3aed', label: 'lost', emoji: '💀' };
+    } else if (minutes > TMC.yellow) {
+      return { color: '#ef4444', label: 'red', emoji: '🔴' };
+    } else if (minutes >= TMC.green) {
+      return { color: '#eab308', label: 'yellow', emoji: '🟡' };
+    } else {
+      return { color: '#22c55e', label: 'green', emoji: '🟢' };
     }
-    return null;
   }
 
-  // ─────────────────────────────────────────────
-  //  LÓGICA DE ATUALIZAÇÃO DE UM ÚNICO CICLO
-  // ─────────────────────────────────────────────
-  /**
-   * Atualiza os dados de um ciclo específico no state e re-renderiza o card.
-   * @param {string} cycle
-   */
-  async function refreshCycle(cycle) {
-    const today = getToday();
-    // Marca o ciclo como loading e re-renderiza
-    state.data[cycle] = { status: 'loading', waves: [], avg: null, ts: null };
-    renderCard(cycle);
+  /** Formata segundos para MM:SS */
+  function formatMMSS(totalSeconds) {
+    const m = Math.floor(totalSeconds / 60);
+    const s = Math.floor(totalSeconds % 60);
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  /** Retorna data atual no formato YYYY-MM-DD */
+  function getTodayDate() {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  /** Retorna data atual formatada para exibição */
+  function getDisplayDate() {
+    return new Date().toLocaleDateString(
+      state.lang === 'PT' ? 'pt-BR' : state.lang === 'ES' ? 'es-ES' : 'en-US',
+      { weekday: 'short', day: '2-digit', month: '2-digit' }
+    );
+  }
+
+  // ─── FETCH ────────────────────────────────────────────────────────────────────
+
+  /** Busca waves disponíveis para um ciclo */
+  async function fetchWaves(ciclo) {
+    const date = getTodayDate();
+    const url = `${BASE_URL}/logistics/last-mile/monitoring/api/ops-clock/waves-status?cycleId=${ciclo}&date=${date}`;
+    try {
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) return [1]; // fallback wave 1
+      const json = await res.json();
+      // Espera array de objetos com campo wave ou waveId
+      if (Array.isArray(json) && json.length > 0) {
+        // Tenta extrair número da wave
+        const waves = json
+          .map(w => w.wave || w.waveId || w.wave_id || 1)
+          .filter((v, i, a) => a.indexOf(v) === i); // unique
+        return waves.length > 0 ? waves : [1];
+      }
+      return [1];
+    } catch (e) {
+      return [1];
+    }
+  }
+
+  /** Busca dispatch de uma wave específica */
+  async function fetchDispatch(facilityId, ciclo, wave) {
+    const url = `${BASE_URL}/logistics/last-mile/monitoring/frm-provider/api/dispatch?facilityId=${facilityId}&groupId=${ciclo}&siteId=MLB&wave=${wave}`;
+    try {
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) return [];
+      const json = await res.json();
+      if (Array.isArray(json)) {
+        // Enriquecer cada item com metadados do ciclo/wave
+        return json.map(item => ({
+          ...item,
+          _cycle: ciclo,
+          _wave: wave,
+          _fetchedAt: Date.now(),
+        }));
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /** Busca TODOS os ciclos e waves, retorna array flat */
+  async function fetchAll() {
+    if (state.loading) return;
+    state.loading = true;
+    updateLoadingUI(true);
+
+    const allItems = [];
+    const today = getTodayDate();
 
     try {
-      let wavesData = []; // [{ wave: Number, tmc: Number|null }]
-
-      if (SIMPLE_CYCLES.includes(cycle)) {
-        // ── Ciclo simples (SD, CHP): sem waves, chama dispatch direto com wave=1
-        const tmc = await fetchDispatch(state.facilityId, cycle, 1);
-        wavesData = [{ wave: 1, tmc }];
-      } else {
-        // ── Ciclo com waves: busca waves-status primeiro
-        const waveList = await fetchWaves(cycle, today);
-
-        if (waveList.length === 0) {
-          // Nenhuma wave disponível ainda
-          state.data[cycle] = { status: 'nodata', waves: [], avg: null, ts: getTimestamp() };
-          renderCard(cycle);
-          return;
-        }
-
-        // Para cada wave, busca o dispatch
-        for (const waveObj of waveList) {
-          const waveNum = waveObj.wave;
-          let tmc = null;
-          try {
-            tmc = await fetchDispatch(state.facilityId, cycle, waveNum);
-          } catch (_) {
-            tmc = null; // wave com erro → tmc null
-          }
-          wavesData.push({ wave: waveNum, tmc });
+      // Ciclos com waves: busca waves-status primeiro
+      for (const ciclo of CYCLES_WITH_WAVES) {
+        const waves = await fetchWaves(ciclo);
+        for (const wave of waves) {
+          const items = await fetchDispatch(state.facilityId, ciclo, wave);
+          allItems.push(...items);
         }
       }
 
-      // Calcula a média apenas com waves que têm tmc válido
-      const validTmcs = wavesData.map(w => w.tmc).filter(t => t !== null);
-      const avg = validTmcs.length > 0
-        ? Math.round((validTmcs.reduce((a, b) => a + b, 0) / validTmcs.length) * 100) / 100
-        : null;
+      // Ciclos simples: dispatch direto com wave=1
+      for (const ciclo of SIMPLE_CYCLES) {
+        const items = await fetchDispatch(state.facilityId, ciclo, 1);
+        allItems.push(...items);
+      }
 
-      state.data[cycle] = {
-        status: avg !== null ? 'ok' : 'nodata',
-        waves:  wavesData,
-        avg,
-        ts: getTimestamp(),
-      };
-    } catch (err) {
-      console.warn(`[TMC] Erro no ciclo ${cycle}:`, err.message);
-      state.data[cycle] = { status: 'error', waves: [], avg: null, ts: getTimestamp() };
-    }
+      // Deduplica por route_id (pega o mais recente)
+      const seen = new Map();
+      for (const item of allItems) {
+        const key = item.route_id || item.route_name;
+        if (!seen.has(key)) {
+          seen.set(key, item);
+        } else {
+          // Mantém o com maior total_elapsed_time
+          if ((item.total_elapsed_time || 0) > (seen.get(key).total_elapsed_time || 0)) {
+            seen.set(key, item);
+          }
+        }
+      }
 
-    renderCard(cycle);
-  }
-
-  // ─────────────────────────────────────────────
-  //  ATUALIZAÇÃO GERAL (todos os ciclos em paralelo)
-  // ─────────────────────────────────────────────
-  async function refreshAll() {
-    if (state.loading) return; // evita chamadas sobrepostas
-    state.loading = true;
-
-    // Pausa o countdown durante o fetch
-    stopCountdown();
-    updateRefreshButton(true);
-
-    // Dispara todas as atualizações em paralelo
-    await Promise.allSettled(ALL_CYCLES.map(cycle => refreshCycle(cycle)));
-
-    state.loading = false;
-    updateRefreshButton(false);
-
-    // Reinicia o countdown se auto-refresh ativo
-    if (state.autoRefresh) {
-      state.countdown = AUTO_REFRESH_S;
-      startCountdown();
+      state.data = Array.from(seen.values());
+      state.fetchTimestamp = Date.now();
+    } catch (e) {
+      console.error('[TMC Monitor] Erro no fetch:', e);
+    } finally {
+      state.loading = false;
+      updateLoadingUI(false);
+      render();
+      resetCountdown();
     }
   }
 
-  // ─────────────────────────────────────────────
-  //  AUTO-REFRESH — TIMERS
-  // ─────────────────────────────────────────────
-  function startAutoRefresh() {
-    stopAutoRefresh();
-    state.timer = setInterval(() => {
-      if (!state.loading) refreshAll();
-    }, AUTO_REFRESH_S * 1000);
+  // ─── FILTROS ──────────────────────────────────────────────────────────────────
+
+  /** Aplica todos os filtros ao state.data */
+  function applyFilters() {
+    let items = [...state.data];
+
+    // Filtro por ciclo
+    if (state.cicloFiltro) {
+      const cf = state.cicloFiltro.toUpperCase();
+      items = items.filter(item => {
+        const cycle = getCycle(item.route_name).toUpperCase();
+        if (cf === 'AM') return cycle === 'AM1' || cycle === 'AM101';
+        if (cf === 'PM') return cycle === 'PM1' || cycle === 'PM101';
+        if (cf === 'SD') return cycle === 'SD' || cycle === 'SD101';
+        if (cf === 'CHP') return cycle === 'CHP';
+        return true;
+      });
+    }
+
+    // Filtro por status
+    if (state.statusFiltro) {
+      items = items.filter(item => item.process === state.statusFiltro);
+    }
+
+    // Filtro por área/gaiola (letra inicial)
+    if (state.gaiolaFiltro) {
+      items = items.filter(item =>
+        getAreaLetter(item.route_name) === state.gaiolaFiltro
+      );
+    }
+
+    // Filtro por texto (route_name)
+    if (state.searchText) {
+      const q = state.searchText.toLowerCase();
+      items = items.filter(item =>
+        (item.route_name || '').toLowerCase().includes(q)
+      );
+    }
+
+    // Ordena por tempo decrescente (mais tempo primeiro)
+    items.sort((a, b) => {
+      const minA = getElapsedMin(a);
+      const minB = getElapsedMin(b);
+      return minB - minA;
+    });
+
+    return items;
   }
 
-  function stopAutoRefresh() {
-    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+  /** Retorna lista de áreas únicas presentes nos dados */
+  function getUniqueAreas() {
+    const areas = new Set();
+    state.data.forEach(item => areas.add(getAreaLetter(item.route_name)));
+    return Array.from(areas).sort();
   }
 
-  function startCountdown() {
-    stopCountdown();
+  /** Calcula KPIs sobre os dados filtrados */
+  function calcKPIs(items) {
+    let green = 0, yellow = 0, red = 0, lost = 0;
+    items.forEach(item => {
+      const min = getElapsedMin(item);
+      const tl = getTrafficLight(min);
+      if (tl.label === 'green') green++;
+      else if (tl.label === 'yellow') yellow++;
+      else if (tl.label === 'red') red++;
+      else if (tl.label === 'lost') lost++;
+    });
+    return { total: items.length, green, yellow, red, lost };
+  }
+
+  // ─── TIMERS DOS CARDS ─────────────────────────────────────────────────────────
+
+  /** Para todos os timers de cards */
+  function stopAllTimers() {
+    Object.values(state.timers).forEach(id => clearInterval(id));
+    state.timers = {};
+  }
+
+  /** Inicia timer para um card específico (atualiza apenas o elemento do timer) */
+  function startCardTimer(item) {
+    const key = item.route_id || item.route_name;
+    // Para timer anterior se existir
+    if (state.timers[key]) {
+      clearInterval(state.timers[key]);
+    }
+
+    const timerEl = document.getElementById(`tmc-timer-${key}`);
+    const cardEl = document.getElementById(`tmc-card-${key}`);
+    if (!timerEl) return;
+
+    const intervalId = setInterval(() => {
+      const timerElNow = document.getElementById(`tmc-timer-${key}`);
+      const cardElNow = document.getElementById(`tmc-card-${key}`);
+      if (!timerElNow) {
+        clearInterval(state.timers[key]);
+        delete state.timers[key];
+        return;
+      }
+
+      const min = getElapsedMin(item);
+      const tl = getTrafficLight(min);
+      const delta = state.fetchTimestamp
+        ? (Date.now() - state.fetchTimestamp) / 1000
+        : 0;
+      const totalSec = (item.total_elapsed_time || 0) + delta;
+
+      // Atualiza texto e cor do timer
+      timerElNow.textContent = formatMMSS(totalSec);
+      timerElNow.style.color = tl.color;
+
+      // Atualiza barra do topo e borda do card
+      if (cardElNow) {
+        const topBar = cardElNow.querySelector('.tmc-card-topbar');
+        if (topBar) topBar.style.background = tl.color;
+        cardElNow.style.borderLeft = `3px solid ${tl.color}`;
+
+        // Atualiza badge TMC perdido
+        const lostBadge = cardElNow.querySelector('.tmc-lost-badge');
+        if (min >= TMC.lost) {
+          if (!lostBadge) {
+            const badge = document.createElement('div');
+            badge.className = 'tmc-lost-badge';
+            badge.style.cssText = `
+              position:absolute; top:8px; left:50%; transform:translateX(-50%);
+              background:#7c3aed; color:#fff; font-size:0.65rem; font-weight:700;
+              padding:2px 8px; border-radius:20px;
+              animation:tmcPulse 1s infinite alternate;
+            `;
+            badge.textContent = i18n[state.lang].lostTMC;
+            cardElNow.style.position = 'relative';
+            cardElNow.appendChild(badge);
+          }
+        } else {
+          if (lostBadge) lostBadge.remove();
+        }
+      }
+    }, 1000);
+
+    state.timers[key] = intervalId;
+  }
+
+  /** Inicia timers para todos os cards visíveis */
+  function startAllCardTimers(items) {
+    stopAllTimers();
+    items.forEach(item => startCardTimer(item));
+  }
+
+  // ─── COUNTDOWN DO AUTO-REFRESH ─────────────────────────────────────────────
+
+  function resetCountdown() {
     state.countdown = AUTO_REFRESH_S;
-    updateCountdownDisplay();
+    updateCountdownUI();
+  }
+
+  function updateCountdownUI() {
+    const el = document.getElementById('tmc-countdown');
+    if (el) {
+      const t = i18n[state.lang];
+      el.textContent = `${t.next}: ${state.countdown}s`;
+    }
+  }
+
+  function startAutoRefreshLoop() {
+    // Para loops anteriores
+    if (state.countdownTimer) clearInterval(state.countdownTimer);
+    if (state.autoRefreshTimer) clearInterval(state.autoRefreshTimer);
+
     state.countdownTimer = setInterval(() => {
-      state.countdown--;
-      if (state.countdown < 0) state.countdown = 0;
-      updateCountdownDisplay();
+      if (state.loading) return; // pausa durante fetch
+      if (!state.autoRefresh) return;
+      if (state.countdown > 0) {
+        state.countdown--;
+        updateCountdownUI();
+      } else {
+        resetCountdown();
+        fetchAll();
+      }
     }, 1000);
   }
 
-  function stopCountdown() {
-    if (state.countdownTimer) { clearInterval(state.countdownTimer); state.countdownTimer = null; }
-  }
+  // ─── UI LOADING ───────────────────────────────────────────────────────────────
 
-  function updateCountdownDisplay() {
-    const el = document.getElementById('__tmc_countdown__');
-    if (el) {
-      const t = i18n[state.lang];
-      el.textContent = state.autoRefresh ? `${t.next}: ${state.countdown}s` : '';
+  function updateLoadingUI(isLoading) {
+    const btn = document.getElementById('tmc-refresh-btn');
+    if (btn) {
+      btn.disabled = isLoading;
+      btn.style.opacity = isLoading ? '0.5' : '1';
+    }
+    const statusEl = document.getElementById('tmc-status-text');
+    if (statusEl) {
+      statusEl.textContent = isLoading ? i18n[state.lang].fetching : '';
     }
   }
 
-  // ─────────────────────────────────────────────
-  //  ATUALIZA ESTADO DO BOTÃO DE REFRESH
-  // ─────────────────────────────────────────────
-  function updateRefreshButton(loading) {
-    const btn = document.getElementById('__tmc_refresh_btn__');
-    if (!btn) return;
-    btn.disabled = loading;
-    btn.style.opacity = loading ? '0.5' : '1';
-    btn.style.cursor  = loading ? 'not-allowed' : 'pointer';
-    btn.textContent   = loading ? '⏳' : '🔄';
-  }
+  // ─── INJEÇÃO DE CSS ───────────────────────────────────────────────────────────
 
-  // ─────────────────────────────────────────────
-  //  RENDER — CARD INDIVIDUAL
-  // ─────────────────────────────────────────────
-  /**
-   * Re-renderiza apenas o conteúdo interno de um card de ciclo.
-   * @param {string} cycle
-   */
-  function renderCard(cycle) {
-    const cardBody = document.getElementById(`__tmc_card_body_${cycle}__`);
-    if (!cardBody) return;
-    cardBody.innerHTML = buildCardBodyHTML(cycle);
-  }
-
-  /**
-   * Gera o HTML do conteúdo interno de um card de ciclo.
-   * @param {string} cycle
-   * @returns {string}
-   */
-  function buildCardBodyHTML(cycle) {
-    const t   = i18n[state.lang];
-    const d   = state.data[cycle];
-    const isSimple = SIMPLE_CYCLES.includes(cycle);
-
-    // ── Estado: carregando
-    if (d.status === 'loading') {
-      return `<div class="tmc-card-status tmc-loading">${t.loading}</div>`;
-    }
-
-    // ── Estado: erro
-    if (d.status === 'error') {
-      return `<div class="tmc-card-status tmc-error">⚠️ ${t.error}</div>`;
-    }
-
-    // ── Estado: sem dados
-    if (d.status === 'nodata' || d.avg === null) {
-      const tsHtml = d.ts ? `<div class="tmc-ts">${t.lastUpdate}: ${d.ts}</div>` : '';
-      return `<div class="tmc-card-status tmc-nodata">— ${t.noData}</div>${tsHtml}`;
-    }
-
-    // ── Estado: ok — monta badge de média + lista de waves
-    const light = getTrafficLight(d.avg);
-
-    // Para ciclos simples (SD, CHP) com 1 wave: mostra só o valor sem seção de média
-    let html = '';
-
-    if (isSimple) {
-      // Ciclo simples: exibe o valor da wave 1 diretamente
-      const w0   = d.waves[0];
-      const wTmc = w0 ? w0.tmc : null;
-      const wLight = getTrafficLight(wTmc);
-      html += `
-        <div class="tmc-avg-badge" style="background:${wLight.color}22;border-color:${wLight.color};">
-          <span class="tmc-avg-dot" style="background:${wLight.color};"></span>
-          <span class="tmc-avg-value" style="color:${wLight.color};">
-            ${wTmc !== null ? wTmc + ' ' + t.min : t.noData}
-          </span>
-        </div>
-      `;
-    } else {
-      // Ciclo com waves: exibe média + lista de waves
-      html += `
-        <div class="tmc-avg-badge" style="background:${light.color}22;border-color:${light.color};">
-          <span class="tmc-avg-dot" style="background:${light.color};"></span>
-          <span class="tmc-avg-label">${t.average}:</span>
-          <span class="tmc-avg-value" style="color:${light.color};">
-            ${d.avg} ${t.min}
-          </span>
-        </div>
-        <div class="tmc-wave-list">
-      `;
-      for (const wObj of d.waves) {
-        const wLight = getTrafficLight(wObj.tmc);
-        const wVal   = wObj.tmc !== null ? `${wObj.tmc} ${t.min}` : t.noData;
-        html += `
-          <div class="tmc-wave-item">
-            <span class="tmc-wave-dot" style="background:${wLight.color};"></span>
-            <span class="tmc-wave-name">${t.wave} ${wObj.wave}</span>
-            <span class="tmc-wave-val" style="color:${wLight.color};">${wVal}</span>
-          </div>
-        `;
+  function injectStyles() {
+    if (document.getElementById('tmc-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'tmc-styles';
+    style.textContent = `
+      @keyframes tmcPulse {
+        0% { opacity: 1; box-shadow: 0 0 6px #7c3aed; }
+        100% { opacity: 0.6; box-shadow: 0 0 14px #7c3aed; }
       }
-      html += `</div>`;
-    }
-
-    // Timestamp
-    if (d.ts) {
-      html += `<div class="tmc-ts">${t.lastUpdate}: ${d.ts}</div>`;
-    }
-
-    return html;
+      @keyframes tmcFadeIn {
+        from { opacity: 0; transform: translateY(-8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      #${PANEL_ID} * {
+        box-sizing: border-box;
+        font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      }
+      #${PANEL_ID} ::-webkit-scrollbar {
+        width: 5px;
+      }
+      #${PANEL_ID} ::-webkit-scrollbar-track {
+        background: #0d1117;
+      }
+      #${PANEL_ID} ::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 3px;
+      }
+      #${PANEL_ID} select,
+      #${PANEL_ID} input {
+        outline: none;
+        border: 1px solid #1e293b;
+        border-radius: 6px;
+        background: #1e293b;
+        color: #e2e8f0;
+        font-size: 0.78rem;
+        padding: 5px 8px;
+        transition: border-color 0.2s;
+      }
+      #${PANEL_ID} select:focus,
+      #${PANEL_ID} input:focus {
+        border-color: #f2b705;
+      }
+      .tmc-card-item {
+        animation: tmcFadeIn 0.3s ease;
+        transition: box-shadow 0.2s, border-color 0.2s;
+      }
+      .tmc-card-item:hover {
+        box-shadow: 0 0 0 2px rgba(242,183,5,0.4), 0 8px 24px rgba(0,0,0,0.5) !important;
+      }
+      .tmc-tab-btn {
+        transition: all 0.2s;
+        cursor: pointer;
+        border: none;
+      }
+      .tmc-tab-btn:hover {
+        color: #f2b705 !important;
+      }
+      .tmc-cycle-btn {
+        transition: all 0.15s;
+        cursor: pointer;
+        border: none;
+      }
+      .tmc-cycle-btn:hover {
+        border-color: #f2b705 !important;
+        color: #f2b705 !important;
+      }
+      .tmc-ctrl-btn {
+        cursor: pointer;
+        border: 1px solid #1e293b;
+        border-radius: 6px;
+        background: #1e293b;
+        color: #e2e8f0;
+        font-size: 0.78rem;
+        padding: 5px 10px;
+        transition: background 0.2s;
+      }
+      .tmc-ctrl-btn:hover {
+        background: #334155;
+      }
+      .tmc-ctrl-btn:disabled {
+        cursor: not-allowed;
+      }
+      .tmc-toggle-active {
+        background: rgba(242,183,5,0.15) !important;
+        border-color: #f2b705 !important;
+        color: #f2b705 !important;
+      }
+      .tmc-history-row:hover td {
+        filter: brightness(1.2);
+      }
+      .tmc-progress-bar-inner {
+        transition: width 0.5s ease;
+      }
+    `;
+    document.head.appendChild(style);
   }
 
-  // ─────────────────────────────────────────────
-  //  RENDER — PAINEL COMPLETO
-  // ─────────────────────────────────────────────
+  // ─── RENDER PRINCIPAL ─────────────────────────────────────────────────────────
+
   function render() {
     const panel = document.getElementById(PANEL_ID);
     if (!panel) return;
+
     const t = i18n[state.lang];
+    const filtered = applyFilters();
+    const kpis = calcKPIs(filtered);
+    const areas = getUniqueAreas();
 
-    // Atualiza header — badge da base e subtítulo
-    const badgeEl = document.getElementById('__tmc_base_badge__');
-    if (badgeEl) badgeEl.textContent = state.facilityId;
+    // Atualiza corpo do painel
+    const body = document.getElementById('tmc-body');
+    if (!body) return;
 
-    const subtitleEl = document.getElementById('__tmc_subtitle__');
-    if (subtitleEl) subtitleEl.textContent = t.subtitle;
+    if (state.minimized) {
+      body.style.display = 'none';
+      return;
+    }
+    body.style.display = 'flex';
+    body.style.flexDirection = 'column';
 
-    const titleEl = document.getElementById('__tmc_title__');
-    if (titleEl) titleEl.textContent = t.title;
-
-    // Atualiza labels dos controles
-    const baseLabelEl = document.getElementById('__tmc_base_label__');
-    if (baseLabelEl) baseLabelEl.textContent = t.base + ':';
-
-    const langLabelEl = document.getElementById('__tmc_lang_label__');
-    if (langLabelEl) langLabelEl.textContent = t.language + ':';
-
-    const arEl = document.getElementById('__tmc_ar_label__');
-    if (arEl) arEl.textContent = t.autoRefresh;
-
-    const closeBtnEl = document.getElementById('__tmc_close_btn__');
-    if (closeBtnEl) closeBtnEl.title = t.close;
-
-    const refreshBtnEl = document.getElementById('__tmc_refresh_btn__');
-    if (refreshBtnEl && !state.loading) refreshBtnEl.textContent = '🔄';
-
-    // Re-renderiza todos os cards
-    ALL_CYCLES.forEach(cycle => renderCard(cycle));
-
-    // Atualiza countdown
-    updateCountdownDisplay();
-  }
-
-  // ─────────────────────────────────────────────
-  //  CRIAÇÃO DO PAINEL
-  // ─────────────────────────────────────────────
-  function createPanel() {
-    const t       = i18n[state.lang];
-    const today   = getToday();
-
-    // ── ESTILOS INJETADOS ─────────────────────
-    const styleId = '__tmc_styles__';
-    if (!document.getElementById(styleId)) {
-      const style = document.createElement('style');
-      style.id = styleId;
-      style.textContent = `
-        #${PANEL_ID} {
-          position: fixed;
-          top: 16px;
-          right: 16px;
-          width: 520px;
-          max-height: 90vh;
-          background: #0f172a;
-          border: 1px solid #334155;
-          border-radius: 12px;
-          box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px #1e293b;
-          font-family: 'Segoe UI', system-ui, sans-serif;
-          font-size: 13px;
-          color: #e2e8f0;
-          z-index: 2147483647;
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
-          user-select: none;
-        }
-        /* ── Header */
-        .tmc-header {
-          background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-          border-bottom: 1px solid #334155;
-          padding: 12px 16px 10px;
-          cursor: grab;
-          flex-shrink: 0;
-        }
-        .tmc-header:active { cursor: grabbing; }
-        .tmc-header-top {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 8px;
-        }
-        .tmc-header-left {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          flex: 1;
-        }
-        #__tmc_title__ {
-          font-size: 15px;
-          font-weight: 700;
-          color: #f1f5f9;
-          white-space: nowrap;
-        }
-        #__tmc_base_badge__ {
-          background: #3b82f6;
-          color: #fff;
-          font-size: 11px;
-          font-weight: 700;
-          padding: 2px 8px;
-          border-radius: 999px;
-          letter-spacing: 0.5px;
-        }
-        #__tmc_subtitle__ {
-          font-size: 11px;
-          color: #94a3b8;
-          margin-top: 2px;
-        }
-        .tmc-date-badge {
-          font-size: 11px;
-          color: #64748b;
-          margin-left: 4px;
-        }
-        .tmc-close-btn {
-          background: none;
-          border: none;
-          color: #64748b;
-          font-size: 18px;
-          cursor: pointer;
-          line-height: 1;
-          padding: 2px 4px;
-          border-radius: 4px;
-          transition: color 0.15s, background 0.15s;
-          flex-shrink: 0;
-        }
-        .tmc-close-btn:hover { color: #ef4444; background: #1e293b; }
-        /* ── Controles */
-        .tmc-controls {
-          background: #0f172a;
-          border-bottom: 1px solid #334155;
-          padding: 10px 14px;
-          display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          gap: 10px;
-          flex-shrink: 0;
-        }
-        .tmc-ctrl-group {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-        .tmc-ctrl-label {
-          font-size: 11px;
-          color: #94a3b8;
-          white-space: nowrap;
-        }
-        .tmc-select {
-          background: #1e293b;
-          border: 1px solid #334155;
-          color: #e2e8f0;
-          font-size: 12px;
-          padding: 4px 8px;
-          border-radius: 6px;
-          cursor: pointer;
-          outline: none;
-          transition: border-color 0.15s;
-        }
-        .tmc-select:focus { border-color: #3b82f6; }
-        .tmc-refresh-btn {
-          background: #1e40af;
-          border: none;
-          color: #fff;
-          font-size: 15px;
-          padding: 5px 10px;
-          border-radius: 7px;
-          cursor: pointer;
-          transition: background 0.15s, transform 0.1s;
-          line-height: 1;
-        }
-        .tmc-refresh-btn:hover { background: #2563eb; transform: scale(1.05); }
-        .tmc-ar-toggle {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-        .tmc-toggle-wrap {
-          position: relative;
-          width: 34px;
-          height: 18px;
-          cursor: pointer;
-        }
-        .tmc-toggle-wrap input {
-          opacity: 0;
-          width: 0;
-          height: 0;
-          position: absolute;
-        }
-        .tmc-toggle-slider {
-          position: absolute;
-          inset: 0;
-          background: #334155;
-          border-radius: 999px;
-          transition: background 0.2s;
-        }
-        .tmc-toggle-slider::before {
-          content: '';
-          position: absolute;
-          width: 12px;
-          height: 12px;
-          background: #fff;
-          border-radius: 50%;
-          top: 3px;
-          left: 3px;
-          transition: transform 0.2s;
-        }
-        .tmc-toggle-wrap input:checked + .tmc-toggle-slider { background: #3b82f6; }
-        .tmc-toggle-wrap input:checked + .tmc-toggle-slider::before { transform: translateX(16px); }
-        #__tmc_countdown__ {
-          font-size: 11px;
-          color: #3b82f6;
-          font-weight: 600;
-          min-width: 60px;
-        }
-        /* ── Grid de ciclos */
-        .tmc-body {
-          overflow-y: auto;
-          padding: 12px;
-          flex: 1;
-          scrollbar-width: thin;
-          scrollbar-color: #334155 transparent;
-        }
-        .tmc-body::-webkit-scrollbar { width: 6px; }
-        .tmc-body::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-        .tmc-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 10px;
-        }
-        /* ── Card individual */
-        .tmc-card {
-          background: #1e293b;
-          border: 1px solid #334155;
-          border-radius: 10px;
-          padding: 11px 13px 10px;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          transition: border-color 0.2s;
-        }
-        .tmc-card:hover { border-color: #475569; }
-        .tmc-card-title {
-          font-size: 13px;
-          font-weight: 700;
-          color: #f1f5f9;
-          letter-spacing: 0.4px;
-        }
-        /* ── Estados do card */
-        .tmc-card-status {
-          font-size: 12px;
-          font-weight: 500;
-          padding: 4px 0;
-        }
-        .tmc-loading { color: #94a3b8; animation: tmc-pulse 1.4s ease-in-out infinite; }
-        @keyframes tmc-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        .tmc-error   { color: #ef4444; }
-        .tmc-nodata  { color: #64748b; }
-        /* ── Badge de média */
-        .tmc-avg-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          border: 1px solid;
-          border-radius: 7px;
-          padding: 5px 10px;
-          margin-top: 2px;
-        }
-        .tmc-avg-dot {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          flex-shrink: 0;
-        }
-        .tmc-avg-label {
-          font-size: 11px;
-          color: #94a3b8;
-        }
-        .tmc-avg-value {
-          font-size: 16px;
-          font-weight: 800;
-          line-height: 1;
-        }
-        /* ── Lista de waves */
-        .tmc-wave-list {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          margin-top: 4px;
-        }
-        .tmc-wave-item {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 3px 6px;
-          background: #0f172a;
-          border-radius: 5px;
-        }
-        .tmc-wave-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          flex-shrink: 0;
-        }
-        .tmc-wave-name {
-          font-size: 11px;
-          color: #94a3b8;
-          flex: 1;
-        }
-        .tmc-wave-val {
-          font-size: 12px;
-          font-weight: 700;
-        }
-        /* ── Timestamp */
-        .tmc-ts {
-          font-size: 10px;
-          color: #475569;
-          margin-top: 4px;
-        }
+    // Atualiza KPIs inline
+    const kpiEl = document.getElementById('tmc-kpi-inline');
+    if (kpiEl) {
+      kpiEl.innerHTML = `
+        <span style="color:#94a3b8">${t.total}: <strong style="color:#e2e8f0">${kpis.total}</strong></span>
+        <span style="color:#22c55e">🟢 ${kpis.green}</span>
+        <span style="color:#eab308">🟡 ${kpis.yellow}</span>
+        <span style="color:#ef4444">🔴 ${kpis.red}</span>
+        <span style="color:#7c3aed">💀 ${kpis.lost}</span>
       `;
-      document.head.appendChild(style);
     }
 
-    // ── ESTRUTURA HTML DO PAINEL ───────────────
-    const panel = document.createElement('div');
-    panel.id = PANEL_ID;
+    // Atualiza select de área dinamicamente
+    const areaSelect = document.getElementById('tmc-area-select');
+    if (areaSelect) {
+      const currentVal = areaSelect.value;
+      areaSelect.innerHTML = `<option value="">${t.areaAll}</option>` +
+        areas.map(a => `<option value="${a}"${currentVal === a ? ' selected' : ''}>${a}</option>`).join('');
+      if (state.gaiolaFiltro) areaSelect.value = state.gaiolaFiltro;
+    }
 
-    // Cards dos ciclos — grid 2 colunas
-    const cardsHTML = ALL_CYCLES.map(cycle => `
-      <div class="tmc-card" id="__tmc_card_${cycle}__">
-        <div class="tmc-card-title">${cycle}</div>
-        <div class="tmc-card-body" id="__tmc_card_body_${cycle}__">
-          <div class="tmc-card-status tmc-loading">${t.loading}</div>
+    // Renderiza conteúdo da aba ativa
+    const tabContent = document.getElementById('tmc-tab-content');
+    if (!tabContent) return;
+
+    if (state.tab === 'realtime') {
+      renderRealtime(tabContent, filtered, t);
+      // Inicia timers dos cards renderizados
+      requestAnimationFrame(() => startAllCardTimers(filtered));
+    } else if (state.tab === 'history') {
+      stopAllTimers();
+      renderHistorico(tabContent, filtered, t);
+    } else if (state.tab === 'stats') {
+      stopAllTimers();
+      renderStats(tabContent, t);
+    }
+
+    // Atualiza botões de abas
+    ['realtime', 'history', 'stats'].forEach(tab => {
+      const btn = document.getElementById(`tmc-tab-${tab}`);
+      if (btn) {
+        if (tab === state.tab) {
+          btn.style.background = '#f2b705';
+          btn.style.color = '#000';
+        } else {
+          btn.style.background = 'transparent';
+          btn.style.color = '#64748b';
+        }
+      }
+    });
+
+    // Atualiza botões de ciclo
+    const ciclos = ['', 'CHP', 'AM', 'PM', 'SD'];
+    const labels = [t.all, 'CHP', 'AM', 'PM', 'SD'];
+    ciclos.forEach((c, i) => {
+      const btn = document.getElementById(`tmc-cycle-${c || 'all'}`);
+      if (btn) {
+        if (c === state.cicloFiltro) {
+          btn.style.background = '#f2b705';
+          btn.style.color = '#000';
+          btn.style.borderColor = '#f2b705';
+        } else {
+          btn.style.background = 'rgba(255,255,255,0.05)';
+          btn.style.color = '#64748b';
+          btn.style.borderColor = '#1e293b';
+        }
+      }
+    });
+
+    // Auto-refresh toggle visual
+    const arBtn = document.getElementById('tmc-ar-toggle');
+    if (arBtn) {
+      if (state.autoRefresh) {
+        arBtn.classList.add('tmc-toggle-active');
+      } else {
+        arBtn.classList.remove('tmc-toggle-active');
+      }
+    }
+  }
+
+  // ─── RENDER TEMPO REAL ────────────────────────────────────────────────────────
+
+  function renderRealtime(container, items, t) {
+    if (state.loading) {
+      container.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:center;height:200px;color:#64748b;gap:12px;">
+          <span style="font-size:1.5rem;animation:tmcPulse 1s infinite alternate">⏳</span>
+          <span>${t.loading}</span>
         </div>
+      `;
+      return;
+    }
+
+    if (items.length === 0) {
+      container.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:center;height:200px;color:#64748b;">
+          ${t.noData}
+        </div>
+      `;
+      return;
+    }
+
+    const cardsHTML = items.map(item => renderCard(item, t)).join('');
+    container.innerHTML = `
+      <div style="
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        gap:12px;
+        padding:16px;
+        overflow-y:auto;
+        max-height:calc(90vh - 280px);
+      ">
+        ${cardsHTML}
+      </div>
+    `;
+  }
+
+  /** Renderiza HTML de um card */
+  function renderCard(item, t) {
+    const key = item.route_id || item.route_name;
+    const min = getElapsedMin(item);
+    const tl = getTrafficLight(min);
+    const cycle = getCycle(item.route_name);
+    const gaiola = getGaiola(item.route_name);
+    const statusLabel = getStatusLabel(item.process);
+    const delta = state.fetchTimestamp ? (Date.now() - state.fetchTimestamp) / 1000 : 0;
+    const totalSec = (item.total_elapsed_time || 0) + delta;
+    const isLost = min >= TMC.lost;
+
+    // Cor do badge de status
+    const statusColors = {
+      loading: { bg: 'rgba(34,197,94,0.15)', text: '#22c55e', border: '#22c55e' },
+      in_customs: { bg: 'rgba(234,179,8,0.15)', text: '#eab308', border: '#eab308' },
+      dispatched: { bg: 'rgba(59,130,246,0.15)', text: '#60a5fa', border: '#3b82f6' },
+      finished: { bg: 'rgba(100,116,139,0.15)', text: '#94a3b8', border: '#64748b' },
+    };
+    const sc = statusColors[item.process] || { bg: 'rgba(255,255,255,0.05)', text: '#e2e8f0', border: '#475569' };
+
+    return `
+      <div
+        id="tmc-card-${key}"
+        class="tmc-card-item"
+        style="
+          background:#0f172a;
+          border-radius:12px;
+          border-left:3px solid ${tl.color};
+          overflow:hidden;
+          position:relative;
+          box-shadow:0 4px 12px rgba(0,0,0,0.4);
+        "
+      >
+        <!-- Barra colorida no topo -->
+        <div class="tmc-card-topbar" style="height:4px;background:${tl.color};"></div>
+
+        <div style="padding:12px;">
+          <!-- Linha 1: route_name + timer -->
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+            <div>
+              <div style="font-size:1.05rem;font-weight:700;color:#f1f5f9;line-height:1.2;">${item.route_name || '—'}</div>
+              <div style="font-size:0.72rem;color:#64748b;margin-top:2px;">${t.dock} ${item.dock_number || '—'}</div>
+            </div>
+            <div
+              id="tmc-timer-${key}"
+              style="
+                font-size:1.8rem;
+                font-weight:800;
+                color:${tl.color};
+                font-variant-numeric:tabular-nums;
+                letter-spacing:-1px;
+                line-height:1;
+              "
+            >${formatMMSS(totalSec)}</div>
+          </div>
+
+          <!-- Linha 2: badges ciclo + status -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+            <span style="
+              background:rgba(242,183,5,0.15);
+              color:#f2b705;
+              border:1px solid rgba(242,183,5,0.3);
+              border-radius:20px;
+              font-size:0.65rem;
+              font-weight:700;
+              padding:2px 8px;
+              letter-spacing:0.5px;
+            ">${cycle}</span>
+            <span style="
+              background:${sc.bg};
+              color:${sc.text};
+              border:1px solid ${sc.border}40;
+              border-radius:20px;
+              font-size:0.65rem;
+              font-weight:600;
+              padding:2px 8px;
+            ">${statusLabel}</span>
+            <span style="
+              background:rgba(255,255,255,0.04);
+              color:#475569;
+              border-radius:20px;
+              font-size:0.62rem;
+              padding:2px 6px;
+            ">${gaiola}</span>
+          </div>
+
+          ${isLost ? `
+          <div class="tmc-lost-badge" style="
+            margin-top:8px;
+            background:#7c3aed;
+            color:#fff;
+            font-size:0.65rem;
+            font-weight:700;
+            padding:3px 10px;
+            border-radius:20px;
+            text-align:center;
+            animation:tmcPulse 1s infinite alternate;
+            display:inline-block;
+          ">${t.lostTMC}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  // ─── RENDER HISTÓRICO ─────────────────────────────────────────────────────────
+
+  function renderHistorico(container, items, t) {
+    if (state.loading) {
+      container.innerHTML = `<div style="text-align:center;padding:40px;color:#64748b;">${t.loading}</div>`;
+      return;
+    }
+    if (items.length === 0) {
+      container.innerHTML = `<div style="text-align:center;padding:40px;color:#64748b;">${t.noData}</div>`;
+      return;
+    }
+
+    const rows = items.map(item => {
+      const min = getElapsedMin(item);
+      const tl = getTrafficLight(min);
+      const cycle = getCycle(item.route_name);
+      const delta = state.fetchTimestamp ? (Date.now() - state.fetchTimestamp) / 1000 : 0;
+      const totalSec = (item.total_elapsed_time || 0) + delta;
+
+      return `
+        <tr class="tmc-history-row" style="border-bottom:1px solid #1e293b;">
+          <td style="padding:10px 12px;font-weight:600;color:#f1f5f9;">${item.route_name || '—'}</td>
+          <td style="padding:10px 12px;color:#94a3b8;">${item.dock_number || '—'}</td>
+          <td style="padding:10px 12px;">
+            <span style="
+              background:rgba(242,183,5,0.15);color:#f2b705;
+              border:1px solid rgba(242,183,5,0.3);
+              border-radius:20px;font-size:0.65rem;font-weight:700;
+              padding:2px 8px;
+            ">${cycle}</span>
+          </td>
+          <td style="padding:10px 12px;color:#94a3b8;">${getStatusLabel(item.process)}</td>
+          <td style="padding:10px 12px;font-weight:700;color:${tl.color};font-variant-numeric:tabular-nums;">
+            ${formatMMSS(totalSec)}
+          </td>
+          <td style="padding:10px 12px;text-align:center;font-size:1.1rem;">${tl.emoji}</td>
+        </tr>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      <div style="overflow:auto;max-height:calc(90vh - 280px);">
+        <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
+          <thead>
+            <tr style="background:#0f172a;position:sticky;top:0;z-index:1;">
+              <th style="padding:10px 12px;text-align:left;color:#64748b;font-weight:600;border-bottom:1px solid #1e293b;">${t.colRoute}</th>
+              <th style="padding:10px 12px;text-align:left;color:#64748b;font-weight:600;border-bottom:1px solid #1e293b;">${t.colDock}</th>
+              <th style="padding:10px 12px;text-align:left;color:#64748b;font-weight:600;border-bottom:1px solid #1e293b;">${t.colCycle}</th>
+              <th style="padding:10px 12px;text-align:left;color:#64748b;font-weight:600;border-bottom:1px solid #1e293b;">${t.colStatus}</th>
+              <th style="padding:10px 12px;text-align:left;color:#64748b;font-weight:600;border-bottom:1px solid #1e293b;">${t.colTime}</th>
+              <th style="padding:10px 12px;text-align:center;color:#64748b;font-weight:600;border-bottom:1px solid #1e293b;">${t.colLight}</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // ─── RENDER STATS ─────────────────────────────────────────────────────────────
+
+  function renderStats(container, t) {
+    const allItems = state.data;
+    const kpis = calcKPIs(allItems);
+
+    // Tempo médio geral
+    let totalMin = 0;
+    allItems.forEach(item => { totalMin += getElapsedMin(item); });
+    const avgMin = allItems.length > 0 ? totalMin / allItems.length : 0;
+    const avgSec = avgMin * 60;
+
+    // Stats por ciclo
+    const cycleStats = {};
+    ALL_CYCLES.forEach(c => {
+      cycleStats[c] = { total: 0, green: 0, yellow: 0, red: 0, lost: 0, sumSec: 0 };
+    });
+
+    allItems.forEach(item => {
+      const cycle = getCycle(item.route_name);
+      const min = getElapsedMin(item);
+      const tl = getTrafficLight(min);
+      const delta = state.fetchTimestamp ? (Date.now() - state.fetchTimestamp) / 1000 : 0;
+      const sec = (item.total_elapsed_time || 0) + delta;
+
+      if (cycleStats[cycle]) {
+        cycleStats[cycle].total++;
+        cycleStats[cycle].sumSec += sec;
+        if (tl.label === 'green') cycleStats[cycle].green++;
+        else if (tl.label === 'yellow') cycleStats[cycle].yellow++;
+        else if (tl.label === 'red') cycleStats[cycle].red++;
+        else if (tl.label === 'lost') cycleStats[cycle].lost++;
+      }
+    });
+
+    // KPI cards
+    const kpiCardsData = [
+      { label: t.statsTotal, value: kpis.total, color: '#60a5fa', icon: '📦' },
+      { label: t.statsGreen, value: kpis.green, color: '#22c55e', icon: '🟢' },
+      { label: t.statsYellow, value: kpis.yellow, color: '#eab308', icon: '🟡' },
+      { label: t.statsRed, value: kpis.red, color: '#ef4444', icon: '🔴' },
+      { label: t.statsLost, value: kpis.lost, color: '#7c3aed', icon: '💀' },
+    ];
+
+    const kpiCardsHTML = kpiCardsData.map(k => `
+      <div style="
+        background:#0f172a;
+        border-radius:12px;
+        padding:16px;
+        border:1px solid #1e293b;
+        text-align:center;
+      ">
+        <div style="font-size:1.6rem;margin-bottom:4px;">${k.icon}</div>
+        <div style="font-size:1.8rem;font-weight:800;color:${k.color};">${k.value}</div>
+        <div style="font-size:0.72rem;color:#64748b;margin-top:4px;">${k.label}</div>
       </div>
     `).join('');
 
-    panel.innerHTML = `
-      <!-- ── HEADER ── -->
-      <div class="tmc-header" id="__tmc_header__">
-        <div class="tmc-header-top">
-          <div class="tmc-header-left">
-            <span id="__tmc_title__">${t.title}</span>
-            <span id="__tmc_base_badge__">${state.facilityId}</span>
-            <span class="tmc-date-badge">${today}</span>
-          </div>
-          <button class="tmc-close-btn" id="__tmc_close_btn__" title="${t.close}">✕</button>
-        </div>
-        <div id="__tmc_subtitle__" style="font-size:11px;color:#94a3b8;margin-top:3px;">${t.subtitle}</div>
-      </div>
-
-      <!-- ── CONTROLES ── -->
-      <div class="tmc-controls">
-        <!-- Seletor de base -->
-        <div class="tmc-ctrl-group">
-          <span class="tmc-ctrl-label" id="__tmc_base_label__">${t.base}:</span>
-          <select class="tmc-select" id="__tmc_facility_select__">
-            ${FACILITY_OPTIONS.map(f => `<option value="${f}" ${f === state.facilityId ? 'selected' : ''}>${f}</option>`).join('')}
-          </select>
-        </div>
-        <!-- Seletor de idioma -->
-        <div class="tmc-ctrl-group">
-          <span class="tmc-ctrl-label" id="__tmc_lang_label__">${t.language}:</span>
-          <select class="tmc-select" id="__tmc_lang_select__">
-            <option value="PT" ${state.lang === 'PT' ? 'selected' : ''}>🇧🇷 Português</option>
-            <option value="EN" ${state.lang === 'EN' ? 'selected' : ''}>🇺🇸 English</option>
-            <option value="ES" ${state.lang === 'ES' ? 'selected' : ''}>🇪🇸 Español</option>
-          </select>
-        </div>
-        <!-- Botão refresh manual -->
-        <button class="tmc-refresh-btn" id="__tmc_refresh_btn__" title="${t.refresh}">🔄</button>
-        <!-- Toggle auto-refresh -->
-        <div class="tmc-ar-toggle">
-          <label class="tmc-toggle-wrap">
-            <input type="checkbox" id="__tmc_ar_toggle__" ${state.autoRefresh ? 'checked' : ''}>
-            <span class="tmc-toggle-slider"></span>
-          </label>
-          <span class="tmc-ctrl-label" id="__tmc_ar_label__">${t.autoRefresh}</span>
-          <span id="__tmc_countdown__"></span>
-        </div>
-      </div>
-
-      <!-- ── GRID DE CICLOS ── -->
-      <div class="tmc-body">
-        <div class="tmc-grid">
-          ${cardsHTML}
+    // Card de tempo médio
+    const avgCard = `
+      <div style="
+        background:#0f172a;
+        border-radius:12px;
+        padding:16px;
+        border:1px solid #1e293b;
+        text-align:center;
+        grid-column: span 5;
+      ">
+        <div style="font-size:0.75rem;color:#64748b;margin-bottom:4px;">${t.statsAvg}</div>
+        <div style="font-size:2rem;font-weight:800;color:${getTrafficLight(avgMin).color};">
+          ${formatMMSS(avgSec)}
         </div>
       </div>
     `;
 
+    // Cards por ciclo
+    const cycleCardsHTML = ALL_CYCLES.map(cycle => {
+      const cs = cycleStats[cycle];
+      if (!cs || cs.total === 0) return '';
+      const avgCycleSec = cs.total > 0 ? cs.sumSec / cs.total : 0;
+      const avgCycleMin = avgCycleSec / 60;
+      const pctGreen = cs.total > 0 ? Math.round((cs.green / cs.total) * 100) : 0;
+      const tlCycle = getTrafficLight(avgCycleMin);
+
+      return `
+        <div style="
+          background:#0f172a;
+          border-radius:12px;
+          padding:16px;
+          border:1px solid #1e293b;
+          border-left:3px solid ${tlCycle.color};
+        ">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <span style="font-size:0.95rem;font-weight:700;color:#f1f5f9;">${cycle}</span>
+            <span style="
+              background:rgba(242,183,5,0.1);color:#f2b705;
+              border-radius:20px;font-size:0.68rem;font-weight:700;
+              padding:2px 8px;
+            ">${cs.total} ${t.routes}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#64748b;margin-bottom:8px;">
+            <span>${t.withinTMC}: <strong style="color:#22c55e">${pctGreen}%</strong></span>
+            <span>${t.avgTime}: <strong style="color:${tlCycle.color}">${formatMMSS(avgCycleSec)}</strong></span>
+          </div>
+          <!-- Barra de progresso -->
+          <div style="height:6px;background:#1e293b;border-radius:3px;overflow:hidden;">
+            <div class="tmc-progress-bar-inner" style="
+              height:100%;
+              width:${pctGreen}%;
+              background:linear-gradient(90deg,#22c55e,#16a34a);
+              border-radius:3px;
+            "></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;font-size:0.68rem;">
+            <span style="color:#22c55e">🟢${cs.green}</span>
+            <span style="color:#eab308">🟡${cs.yellow}</span>
+            <span style="color:#ef4444">🔴${cs.red}</span>
+            <span style="color:#7c3aed">💀${cs.lost}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      <div style="overflow-y:auto;max-height:calc(90vh - 280px);padding:16px;">
+        <!-- KPI Cards -->
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:10px;">
+          ${kpiCardsHTML}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px;">
+          ${avgCard}
+        </div>
+
+        <!-- Breakdown por ciclo -->
+        <div style="font-size:0.8rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">
+          ${t.cycleBreakdown}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+          ${cycleCardsHTML || `<div style="color:#64748b;grid-column:span 3;text-align:center;padding:20px;">${t.noData}</div>`}
+        </div>
+      </div>
+    `;
+  }
+
+  // ─── CRIAÇÃO DO PAINEL ────────────────────────────────────────────────────────
+
+  function createPanel() {
+    injectStyles();
+
+    const t = i18n[state.lang];
+    const panel = document.createElement('div');
+    panel.id = PANEL_ID;
+
+    panel.style.cssText = `
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      width: 680px;
+      max-height: 90vh;
+      background: #0d1117;
+      border-radius: 16px;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.7);
+      z-index: 2147483647;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid #1e293b;
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    `;
+
+    panel.innerHTML = buildPanelHTML(t);
     document.body.appendChild(panel);
 
-    // ── EVENTOS ───────────────────────────────
+    attachEventListeners(panel);
+    enableDrag(panel);
+    fetchAll();
+    startAutoRefreshLoop();
+  }
+
+  function buildPanelHTML(t) {
+    const areas = getUniqueAreas();
+
+    return `
+      <!-- ── HEADER / TOPBAR ── -->
+      <div
+        id="tmc-header"
+        style="
+          background: linear-gradient(135deg, #f2b705 0%, #e6a800 100%);
+          padding: 10px 14px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          cursor: grab;
+          user-select: none;
+          flex-shrink: 0;
+        "
+      >
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:1.05rem;font-weight:800;color:#000;">${t.title}</span>
+          <span style="
+            background:rgba(0,0,0,0.15);
+            color:#000;
+            border-radius:6px;
+            font-size:0.7rem;
+            font-weight:800;
+            padding:2px 8px;
+            letter-spacing:1px;
+          " id="tmc-badge-base">${state.facilityId}</span>
+          <span style="font-size:0.68rem;color:rgba(0,0,0,0.6);" id="tmc-header-date">${getDisplayDate()}</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span id="tmc-status-text" style="font-size:0.68rem;color:rgba(0,0,0,0.6);"></span>
+          <button
+            id="tmc-minimize-btn"
+            style="
+              background:rgba(0,0,0,0.15);border:none;border-radius:6px;
+              width:26px;height:26px;cursor:pointer;font-size:0.9rem;
+              color:#000;display:flex;align-items:center;justify-content:center;
+            "
+            title="Minimizar"
+          >${t.minimize}</button>
+          <button
+            id="tmc-close-btn"
+            style="
+              background:rgba(0,0,0,0.15);border:none;border-radius:6px;
+              width:26px;height:26px;cursor:pointer;font-size:0.9rem;
+              color:#000;display:flex;align-items:center;justify-content:center;
+            "
+            title="Fechar"
+          >${t.close}</button>
+        </div>
+      </div>
+
+      <!-- ── BODY (colapsa ao minimizar) ── -->
+      <div id="tmc-body" style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
+
+        <!-- ── CONTROLES ── -->
+        <div style="background:#0f172a;padding:10px 14px;border-bottom:1px solid #1e293b;flex-shrink:0;">
+
+          <!-- Linha 1: busca, base, idioma, refresh, auto-refresh -->
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+            <input
+              id="tmc-search"
+              type="text"
+              placeholder="${t.search}"
+              value="${state.searchText}"
+              style="flex:1;min-width:140px;"
+            />
+            <select id="tmc-base-select" style="width:90px;">
+              ${FACILITY_OPTIONS.map(f => `<option value="${f}"${f === state.facilityId ? ' selected' : ''}>${f}</option>`).join('')}
+            </select>
+            <select id="tmc-lang-select" style="width:80px;">
+              <option value="PT"${state.lang === 'PT' ? ' selected' : ''}>🇧🇷 PT</option>
+              <option value="EN"${state.lang === 'EN' ? ' selected' : ''}>🇺🇸 EN</option>
+              <option value="ES"${state.lang === 'ES' ? ' selected' : ''}>🇪🇸 ES</option>
+            </select>
+            <button id="tmc-refresh-btn" class="tmc-ctrl-btn" title="Refresh">${t.refresh}</button>
+            <button id="tmc-ar-toggle" class="tmc-ctrl-btn ${state.autoRefresh ? 'tmc-toggle-active' : ''}" title="Auto-refresh">
+              ${t.autoRefresh}
+            </button>
+            <span id="tmc-countdown" style="font-size:0.7rem;color:#475569;white-space:nowrap;">
+              ${t.next}: ${state.countdown}s
+            </span>
+          </div>
+
+          <!-- Linha 2: botões de ciclo -->
+          <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+            <button id="tmc-cycle-all" class="tmc-cycle-btn" style="
+              background:${state.cicloFiltro === '' ? '#f2b705' : 'rgba(255,255,255,0.05)'};
+              color:${state.cicloFiltro === '' ? '#000' : '#64748b'};
+              border:1px solid ${state.cicloFiltro === '' ? '#f2b705' : '#1e293b'};
+              border-radius:6px;padding:4px 12px;font-size:0.75rem;font-weight:700;
+            ">${t.all}</button>
+            ${['CHP', 'AM', 'PM', 'SD'].map(c => `
+              <button id="tmc-cycle-${c}" class="tmc-cycle-btn" style="
+                background:${state.cicloFiltro === c ? '#f2b705' : 'rgba(255,255,255,0.05)'};
+                color:${state.cicloFiltro === c ? '#000' : '#64748b'};
+                border:1px solid ${state.cicloFiltro === c ? '#f2b705' : '#1e293b'};
+                border-radius:6px;padding:4px 12px;font-size:0.75rem;font-weight:700;
+              ">${c}</button>
+            `).join('')}
+          </div>
+
+          <!-- Linha 3: filtros adicionais + KPIs -->
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="tmc-status-select" style="width:130px;">
+              <option value="">${t.statusAll}</option>
+              <option value="loading"${state.statusFiltro === 'loading' ? ' selected' : ''}>${t.statusLoading}</option>
+              <option value="in_customs"${state.statusFiltro === 'in_customs' ? ' selected' : ''}>${t.statusCustoms}</option>
+              <option value="dispatched"${state.statusFiltro === 'dispatched' ? ' selected' : ''}>${t.statusDispatched}</option>
+              <option value="finished"${state.statusFiltro === 'finished' ? ' selected' : ''}>${t.statusFinished}</option>
+            </select>
+            <select id="tmc-area-select" style="width:120px;">
+              <option value="">${t.areaAll}</option>
+              ${areas.map(a => `<option value="${a}"${state.gaiolaFiltro === a ? ' selected' : ''}>${a}</option>`).join('')}
+            </select>
+            <div id="tmc-kpi-inline" style="display:flex;gap:10px;font-size:0.75rem;font-weight:600;flex:1;justify-content:flex-end;flex-wrap:wrap;">
+              <!-- preenchido pelo render() -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ABAS ── -->
+        <div style="
+          background:#0d1117;
+          display:flex;
+          gap:4px;
+          padding:8px 14px 0;
+          border-bottom:1px solid #1e293b;
+          flex-shrink:0;
+        ">
+          <button id="tmc-tab-realtime" class="tmc-tab-btn" style="
+            background:${state.tab === 'realtime' ? '#f2b705' : 'transparent'};
+            color:${state.tab === 'realtime' ? '#000' : '#64748b'};
+            border-radius:8px 8px 0 0;padding:7px 14px;font-size:0.78rem;font-weight:600;
+          ">${t.tabRealtime}</button>
+          <button id="tmc-tab-history" class="tmc-tab-btn" style="
+            background:${state.tab === 'history' ? '#f2b705' : 'transparent'};
+            color:${state.tab === 'history' ? '#000' : '#64748b'};
+            border-radius:8px 8px 0 0;padding:7px 14px;font-size:0.78rem;font-weight:600;
+          ">${t.tabHistory}</button>
+          <button id="tmc-tab-stats" class="tmc-tab-btn" style="
+            background:${state.tab === 'stats' ? '#f2b705' : 'transparent'};
+            color:${state.tab === 'stats' ? '#000' : '#64748b'};
+            border-radius:8px 8px 0 0;padding:7px 14px;font-size:0.78rem;font-weight:600;
+          ">${t.tabStats}</button>
+        </div>
+
+        <!-- ── CONTEÚDO DA ABA ── -->
+        <div id="tmc-tab-content" style="flex:1;overflow:hidden;background:#0d1117;min-height:0;">
+          <div style="display:flex;align-items:center;justify-content:center;height:200px;color:#64748b;">
+            ${t.loading}
+          </div>
+        </div>
+
+      </div><!-- /tmc-body -->
+    `;
+  }
+
+  // ─── EVENT LISTENERS ──────────────────────────────────────────────────────────
+
+  function attachEventListeners(panel) {
     // Fechar
-    document.getElementById('__tmc_close_btn__').addEventListener('click', () => {
-      panel.style.display = 'none';
+    panel.querySelector('#tmc-close-btn').addEventListener('click', () => {
+      stopAllTimers();
+      if (state.countdownTimer) clearInterval(state.countdownTimer);
+      if (state.autoRefreshTimer) clearInterval(state.autoRefreshTimer);
+      panel.remove();
+      document.getElementById('tmc-styles') && document.getElementById('tmc-styles').remove();
     });
 
-    // Seletor de base
-    document.getElementById('__tmc_facility_select__').addEventListener('change', e => {
-      state.facilityId = e.target.value;
-      savePrefs();
-      render(); // atualiza badge no header
-      refreshAll();
-    });
-
-    // Seletor de idioma
-    document.getElementById('__tmc_lang_select__').addEventListener('change', e => {
-      state.lang = e.target.value;
-      savePrefs();
-      render(); // re-renderiza toda a UI com novo idioma
-    });
-
-    // Botão refresh manual
-    document.getElementById('__tmc_refresh_btn__').addEventListener('click', () => {
-      if (state.autoRefresh) {
-        stopCountdown();
-        state.countdown = AUTO_REFRESH_S;
+    // Minimizar
+    panel.querySelector('#tmc-minimize-btn').addEventListener('click', () => {
+      state.minimized = !state.minimized;
+      const body = panel.querySelector('#tmc-body');
+      if (state.minimized) {
+        body.style.display = 'none';
+        panel.style.maxHeight = '48px';
+        stopAllTimers();
+      } else {
+        body.style.display = 'flex';
+        panel.style.maxHeight = '90vh';
+        render();
       }
-      refreshAll();
+    });
+
+    // Refresh manual
+    panel.querySelector('#tmc-refresh-btn').addEventListener('click', () => {
+      if (!state.loading) {
+        resetCountdown();
+        fetchAll();
+      }
     });
 
     // Toggle auto-refresh
-    document.getElementById('__tmc_ar_toggle__').addEventListener('change', e => {
-      state.autoRefresh = e.target.checked;
-      if (state.autoRefresh) {
-        startAutoRefresh();
-        startCountdown();
-      } else {
-        stopAutoRefresh();
-        stopCountdown();
-        updateCountdownDisplay();
-      }
+    panel.querySelector('#tmc-ar-toggle').addEventListener('click', () => {
+      state.autoRefresh = !state.autoRefresh;
+      render();
     });
 
-    // Drag-and-drop pelo header
-    enableDrag(panel, document.getElementById('__tmc_header__'));
+    // Busca
+    panel.querySelector('#tmc-search').addEventListener('input', (e) => {
+      state.searchText = e.target.value;
+      render();
+    });
+
+    // Select base
+    panel.querySelector('#tmc-base-select').addEventListener('change', (e) => {
+      state.facilityId = e.target.value;
+      // Atualiza badge
+      const badge = panel.querySelector('#tmc-badge-base');
+      if (badge) badge.textContent = state.facilityId;
+      savePrefs();
+      fetchAll();
+    });
+
+    // Select idioma
+    panel.querySelector('#tmc-lang-select').addEventListener('change', (e) => {
+      state.lang = e.target.value;
+      savePrefs();
+      // Re-cria o conteúdo do painel mantendo posição
+      const rect = panel.getBoundingClientRect();
+      panel.innerHTML = buildPanelHTML(i18n[state.lang]);
+      panel.style.top = rect.top + 'px';
+      panel.style.right = (window.innerWidth - rect.right) + 'px';
+      attachEventListeners(panel);
+      enableDrag(panel);
+      render();
+    });
+
+    // Select status
+    panel.querySelector('#tmc-status-select').addEventListener('change', (e) => {
+      state.statusFiltro = e.target.value;
+      render();
+    });
+
+    // Select área
+    panel.querySelector('#tmc-area-select').addEventListener('change', (e) => {
+      state.gaiolaFiltro = e.target.value;
+      render();
+    });
+
+    // Botões de ciclo
+    panel.querySelector('#tmc-cycle-all').addEventListener('click', () => {
+      state.cicloFiltro = '';
+      render();
+    });
+    ['CHP', 'AM', 'PM', 'SD'].forEach(c => {
+      const btn = panel.querySelector(`#tmc-cycle-${c}`);
+      if (btn) btn.addEventListener('click', () => {
+        state.cicloFiltro = state.cicloFiltro === c ? '' : c;
+        render();
+      });
+    });
+
+    // Botões de aba
+    panel.querySelector('#tmc-tab-realtime').addEventListener('click', () => {
+      state.tab = 'realtime';
+      render();
+    });
+    panel.querySelector('#tmc-tab-history').addEventListener('click', () => {
+      state.tab = 'history';
+      render();
+    });
+    panel.querySelector('#tmc-tab-stats').addEventListener('click', () => {
+      state.tab = 'stats';
+      render();
+    });
   }
 
-  // ─────────────────────────────────────────────
-  //  DRAG-AND-DROP
-  // ─────────────────────────────────────────────
-  /**
-   * Habilita arrastar o painel pelo handle.
-   * @param {HTMLElement} el     — elemento a ser movido
-   * @param {HTMLElement} handle — alça de arrasto
-   */
-  function enableDrag(el, handle) {
-    let isDragging = false;
-    let startX, startY, origLeft, origTop;
+  // ─── DRAG AND DROP ────────────────────────────────────────────────────────────
 
-    handle.addEventListener('mousedown', e => {
-      // Ignora clique no botão fechar
-      if (e.target.closest('.tmc-close-btn')) return;
+  function enableDrag(panel) {
+    const header = panel.querySelector('#tmc-header');
+    if (!header) return;
+
+    let isDragging = false;
+    let startX, startY, startLeft, startTop;
+
+    header.addEventListener('mousedown', (e) => {
+      // Ignora cliques nos botões
+      if (e.target.tagName === 'BUTTON') return;
       isDragging = true;
-      const rect = el.getBoundingClientRect();
-      startX   = e.clientX;
-      startY   = e.clientY;
-      origLeft = rect.left;
-      origTop  = rect.top;
-      document.body.style.userSelect = 'none';
-      e.preventDefault();
+      header.style.cursor = 'grabbing';
+
+      const rect = panel.getBoundingClientRect();
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = rect.left;
+      startTop = rect.top;
+
+      // Remove right, usa left/top absolutos
+      panel.style.right = 'auto';
+      panel.style.left = startLeft + 'px';
+      panel.style.top = startTop + 'px';
     });
 
-    document.addEventListener('mousemove', e => {
+    document.addEventListener('mousemove', (e) => {
       if (!isDragging) return;
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
-      let newLeft = origLeft + dx;
-      let newTop  = origTop  + dy;
+      let newLeft = startLeft + dx;
+      let newTop = startTop + dy;
 
       // Mantém dentro da viewport
-      const maxLeft = window.innerWidth  - el.offsetWidth;
-      const maxTop  = window.innerHeight - el.offsetHeight;
-      newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-      newTop  = Math.max(0, Math.min(newTop,  maxTop));
+      newLeft = Math.max(0, Math.min(window.innerWidth - panel.offsetWidth, newLeft));
+      newTop = Math.max(0, Math.min(window.innerHeight - 48, newTop));
 
-      el.style.right  = 'auto';
-      el.style.left   = newLeft + 'px';
-      el.style.top    = newTop  + 'px';
+      panel.style.left = newLeft + 'px';
+      panel.style.top = newTop + 'px';
     });
 
     document.addEventListener('mouseup', () => {
       if (isDragging) {
         isDragging = false;
-        document.body.style.userSelect = '';
+        header.style.cursor = 'grab';
       }
     });
   }
 
-  // ─────────────────────────────────────────────
-  //  INIT
-  // ─────────────────────────────────────────────
+  // ─── INIT ─────────────────────────────────────────────────────────────────────
+
   function init() {
-    // Se o painel já existe, apenas alterna a visibilidade (toggle)
+    loadPrefs();
+
+    // Toggle: se painel já existe, mostra/esconde
     const existing = document.getElementById(PANEL_ID);
     if (existing) {
-      existing.style.display = existing.style.display === 'none' ? 'flex' : 'none';
+      if (existing.style.display === 'none') {
+        existing.style.display = 'flex';
+      } else {
+        existing.style.display = 'none';
+      }
       return;
     }
 
-    // Cria o painel pela primeira vez
     createPanel();
-
-    // Carrega dados iniciais
-    refreshAll();
-
-    // Inicia auto-refresh se habilitado
-    if (state.autoRefresh) {
-      startAutoRefresh();
-      startCountdown();
-    }
   }
 
-  // ── Dispara!
+  // ─── BOOTSTRAP ────────────────────────────────────────────────────────────────
   init();
 
 })();
