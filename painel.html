@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TMC Monitor — Instalação</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0d1117;
+      color: #c9d1d9;
+      font-family: 'Courier New', Courier, monospace;
+      min-height: 100vh;
+      padding: 40px 20px 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 780px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .version-badge {
+      display: inline-block;
+      background: #1a4731;
+      color: #3fb950;
+      border: 1px solid #2ea043;
+      border-radius: 6px;
+      padding: 4px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 20px;
+      align-self: flex-start;
+    }
+
+    .description {
+      font-size: 15px;
+      color: #8b949e;
+      line-height: 1.8;
+      margin-bottom: 32px;
+    }
+    .description .highlight {
+      background: #1f2937;
+      color: #58a6ff;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 28px 32px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-title.green { color: #3fb950; }
+    .card-title.pink  { color: #f78166; }
+    .card-title.blue  { color: #58a6ff; }
+
+    .bullet-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      list-style: none;
+    }
+    .bullet-list li {
+      font-size: 14px;
+      color: #8b949e;
+      line-height: 1.6;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .bullet-list li::before {
+      content: '•';
+      color: #3fb950;
+      font-size: 18px;
+      line-height: 1.2;
+      flex-shrink: 0;
+    }
+    .bullet-list li strong { color: #c9d1d9; }
+
+    .install-label {
+      font-size: 15px;
+      font-weight: 700;
+      color: #c9d1d9;
+      margin-bottom: 20px;
+    }
+
+    .bm-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: #00b4d8;
+      color: #0d1117;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 16px 28px;
+      border-radius: 6px;
+      text-decoration: none;
+      cursor: grab;
+      border: none;
+      transition: background 0.15s, transform 0.1s;
+      user-select: none;
+      letter-spacing: 0.3px;
+    }
+    .bm-btn:hover { background: #48cae4; transform: translateY(-1px); }
+    .bm-btn:active { cursor: grabbing; transform: scale(0.98); }
+    .bm-btn .bm-icon { font-size: 20px; }
+
+    .bm-info {
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .bm-info-line {
+      font-size: 12px;
+      color: #3fb950;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .bm-info-line::before { content: '✓'; font-weight: 700; }
+    .bm-info-line em { font-style: italic; color: #6e7681; }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      list-style: none;
+    }
+    .steps li {
+      font-size: 14px;
+      color: #8b949e;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      line-height: 1.6;
+    }
+    .step-num {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #58a6ff;
+      font-size: 12px;
+      font-weight: 800;
+      width: 26px;
+      height: 26px;
+      min-width: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .steps li strong { color: #c9d1d9; }
+
+    .sema-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+    .sema-table th {
+      text-align: left;
+      color: #6e7681;
+      font-weight: 700;
+      padding: 8px 12px;
+      border-bottom: 1px solid #21262d;
+      letter-spacing: 0.5px;
+      font-size: 12px;
+    }
+    .sema-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #21262d;
+      color: #8b949e;
+    }
+    .sema-table tr:last-child td { border-bottom: none; }
+    .sema-table td:first-child { font-weight: 700; }
+    .dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+
+    .bases-grid, .ciclos-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .base-tag {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #58a6ff;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .base-tag.active {
+      background: #1a3a5c;
+      border-color: #58a6ff;
+    }
+    .ciclo-tag {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #e3b341;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #21262d;
+      margin: 20px 0;
+    }
+
+    .alert {
+      background: #2d2208;
+      border: 1px solid #e3b34144;
+      border-left: 3px solid #e3b341;
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #8b949e;
+      line-height: 1.6;
+      margin-top: 16px;
+    }
+    .alert strong { color: #e3b341; }
+
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 12px;
+      color: #484f58;
+      line-height: 1.8;
+    }
+    footer a { color: #58a6ff; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #0d1117; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="version-badge">v1.0 — dados reais do Mercado Livre</div>
+
+  <p class="description">
+    Painel flutuante para monitorar o <strong>Tempo Médio de Carregamento</strong> de todos os ciclos em tempo real.<br>
+    Funciona em qualquer página do <span class="highlight">logistics.adminml.com</span> .
+  </p>
+
+  <div class="card">
+    <div class="card-title green">✓ &nbsp;O que o TMC Monitor faz</div>
+    <ul class="bullet-list">
+      <li><strong>Semáforo em tempo real</strong> — verde, amarelo e vermelho por ciclo e por wave</li>
+      <li><strong>Todos os ciclos do dia</strong> — AM1, AM101, PM1, PM101, SD, SD101 e CHP</li>
+      <li><strong>Multi-base</strong> — selecione entre SRJ1, SRJ3, SRJ5, SRJ7, SRJ8, SRJ10, SES1 e SES2</li>
+      <li><strong>Auto-refresh</strong> a cada 60 segundos com countdown visual</li>
+      <li><strong>3 idiomas</strong> — Português 🇧🇷, English 🇺🇸 e Español 🇪🇸</li>
+      <li><strong>Painel flutuante</strong> — arraste para qualquer posição sem atrapalhar o painel do ML</li>
+      <li><strong>Fallback gracioso</strong> — se a API falhar, mostra "Sem dados" sem travar</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title pink">📌 &nbsp;INSTALAR — ARRASTE PRA BARRA DE FAVORITOS</div>
+    <p class="install-label">Arraste o botão abaixo para a barra de favoritos:</p>
+
+    <a class="bm-btn" id="bm-link" href="#">
+      <span class="bm-icon">⏱</span> TMC Monitor
+    </a>
+
+    <div class="bm-info">
+      <div class="bm-info-line">Bookmarklet v1.0 pronto</div>
+      <div class="bm-info-line"><em>Carrega sempre a versão mais recente via jsDelivr CDN</em></div>
+    </div>
+
+    <div class="alert">
+      <strong>⚠️ Barra de favoritos não aparece?</strong> Pressione <strong>Ctrl + Shift + B</strong> para exibir.<br>
+      Se o arraste não funcionar: clique com botão direito na barra → <strong>Adicionar página</strong> → cole a URL manualmente.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title blue">▶ &nbsp;COMO USAR</div>
+    <ol class="steps">
+      <li>
+        <div class="step-num">1</div>
+        <div>Abra o painel do Mercado Livre em <strong>logistics.adminml.com</strong> e faça login normalmente.</div>
+      </li>
+      <li>
+        <div class="step-num">2</div>
+        <div>Clique no favorito <strong>⏱ TMC Monitor</strong> na barra de favoritos.</div>
+      </li>
+      <li>
+        <div class="step-num">3</div>
+        <div>Selecione a <strong>base</strong> no dropdown (padrão: SRJ3) e aguarde os dados carregarem.</div>
+      </li>
+      <li>
+        <div class="step-num">4</div>
+        <div>O painel atualiza automaticamente a cada <strong>60 segundos</strong>. Clique em 🔄 para forçar atualização.</div>
+      </li>
+      <li>
+        <div class="step-num">5</div>
+        <div>Clique no favorito novamente para <strong>mostrar ou ocultar</strong> o painel a qualquer momento.</div>
+      </li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <div class="card-title green">✓ &nbsp;LEGENDA DO SEMÁFORO</div>
+    <table class="sema-table">
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>Tempo</th>
+          <th>Significado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="dot" style="background:#22c55e;"></span>Verde</td>
+          <td style="color:#22c55e;">≤ 30 min</td>
+          <td>No prazo — carregamento dentro do esperado</td>
+        </tr>
+        <tr>
+          <td><span class="dot" style="background:#eab308;"></span>Amarelo</td>
+          <td style="color:#eab308;">31 – 45 min</td>
+          <td>Atenção — carregamento acima do ideal</td>
+        </tr>
+        <tr>
+          <td><span class="dot" style="background:#ef4444;"></span>Vermelho</td>
+          <td style="color:#ef4444;">&gt; 45 min</td>
+          <td>Crítico — carregamento muito acima do limite</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title blue">▶ &nbsp;BASES E CICLOS SUPORTADOS</div>
+
+    <p style="font-size:13px;color:#6e7681;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.8px;">Bases disponíveis</p>
+    <div class="bases-grid">
+      <span class="base-tag active">SRJ3</span>
+      <span class="base-tag">SRJ1</span>
+      <span class="base-tag">SRJ5</span>
+      <span class="base-tag">SRJ7</span>
+      <span class="base-tag">SRJ8</span>
+      <span class="base-tag">SRJ10</span>
+      <span class="base-tag">SES1</span>
+      <span class="base-tag">SES2</span>
+    </div>
+
+    <hr class="divider" />
+
+    <p style="font-size:13px;color:#6e7681;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.8px;">Ciclos monitorados</p>
+    <div class="ciclos-grid">
+      <span class="ciclo-tag">AM1</span>
+      <span class="ciclo-tag">AM101</span>
+      <span class="ciclo-tag">PM1</span>
+      <span class="ciclo-tag">PM101</span>
+      <span class="ciclo-tag">SD</span>
+      <span class="ciclo-tag">SD101</span>
+      <span class="ciclo-tag">CHP</span>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <p>⏱ TMC Monitor · Mercado Livre Last Mile</p>
+  <p>Desenvolvido por <a href="https://github.com/kelvinkennedyfs-bit" target="_blank">Kelvin Kennedy</a></p>
+</footer>
+
+<script>
+  // ⚠️ Troque pelo seu usuário real do GitHub se necessário
+  var JSDELIVR_URL = 'https://cdn.jsdelivr.net/gh/kelvinkennedyfs-bit/tmc-monitor@main/tmc.js';
+
+  var bookmarkletCode =
+    '(function(){' +
+      'var s=document.createElement(\'script\');' +
+      's.src=\'' + JSDELIVR_URL + '?v=\'+Date.now();' +
+      'document.head.appendChild(s);' +
+    '})();';
+
+  document.getElementById('bm-link').href = 'javascript:' + bookmarkletCode;
+</script>
+
+</body>
+</html>
