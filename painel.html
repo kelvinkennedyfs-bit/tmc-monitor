@@ -110,8 +110,8 @@
       display: inline-flex;
       align-items: center;
       gap: 12px;
-      background: #00b4d8;
-      color: #0d1117;
+      background: linear-gradient(135deg, #f2b705, #e6a800);
+      color: #000;
       font-family: 'Courier New', Courier, monospace;
       font-size: 16px;
       font-weight: 700;
@@ -124,9 +124,9 @@
       user-select: none;
       letter-spacing: 0.3px;
     }
-    .bm-btn:hover { background: #48cae4; transform: translateY(-1px); }
+    .bm-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
     .bm-btn:active { cursor: grabbing; transform: scale(0.98); }
-    .bm-btn .bm-icon { font-size: 20px; }
+    .bm-btn.loading { background: #21262d; color: #64748b; cursor: wait; pointer-events: none; }
 
     .bm-info {
       margin-top: 14px;
@@ -142,7 +142,8 @@
       gap: 6px;
     }
     .bm-info-line::before { content: '✓'; font-weight: 700; }
-    .bm-info-line em { font-style: italic; color: #6e7681; }
+    .bm-info-line.err { color: #ef4444; }
+    .bm-info-line.err::before { content: '✕'; }
 
     .steps {
       display: flex;
@@ -275,19 +276,19 @@
 
   <p class="description">
     Painel flutuante para monitorar o <strong>Tempo Médio de Carregamento</strong> de todos os ciclos em tempo real.<br>
-    Funciona em qualquer página do <span class="highlight">logistics.adminml.com</span> .
+    Funciona em qualquer página do <span class="highlight">envios.adminml.com</span>.
   </p>
 
   <div class="card">
     <div class="card-title green">✓ &nbsp;O que o TMC Monitor faz</div>
     <ul class="bullet-list">
-      <li><strong>Semáforo em tempo real</strong> — verde, amarelo e vermelho por ciclo e por wave</li>
-      <li><strong>Todos os ciclos do dia</strong> — AM1, AM101, PM1, PM101, SD, SD101 e CHP</li>
+      <li><strong>Semáforo em tempo real</strong> — verde &lt;20min, amarelo 20-25min, vermelho &gt;25min, 💀 ≥30min</li>
+      <li><strong>Todos os ciclos do dia</strong> — AM1, PM1, SD e CHP</li>
       <li><strong>Multi-base</strong> — selecione entre SRJ1, SRJ3, SRJ5, SRJ7, SRJ8, SRJ10, SES1 e SES2</li>
       <li><strong>Auto-refresh</strong> a cada 60 segundos com countdown visual</li>
-      <li><strong>3 idiomas</strong> — Português 🇧🇷, English 🇺🇸 e Español 🇪🇸</li>
+      <li><strong>Timer ao vivo</strong> por rota — conta o tempo em tempo real sem precisar atualizar</li>
       <li><strong>Painel flutuante</strong> — arraste para qualquer posição sem atrapalhar o painel do ML</li>
-      <li><strong>Fallback gracioso</strong> — se a API falhar, mostra "Sem dados" sem travar</li>
+      <li><strong>3 abas</strong> — Tempo Real (cards), Histórico (tabela) e TMC Stats (KPIs por ciclo)</li>
     </ul>
   </div>
 
@@ -295,13 +296,14 @@
     <div class="card-title pink">📌 &nbsp;INSTALAR — ARRASTE PRA BARRA DE FAVORITOS</div>
     <p class="install-label">Arraste o botão abaixo para a barra de favoritos:</p>
 
-    <a class="bm-btn" id="bm-link" href="#">
-      <span class="bm-icon">⏱</span> TMC Monitor
+    <a class="bm-btn loading" id="bm-link" href="javascript:void(0);">
+      <span>⏱</span> TMC Monitor
     </a>
 
-    <div class="bm-info">
-      <div class="bm-info-line">Bookmarklet v1.0 pronto</div>
-      <div class="bm-info-line"><em>Carrega sempre a versão mais recente via jsDelivr CDN</em></div>
+    <div class="bm-info" id="bm-info">
+      <div class="bm-info-line" style="color:#64748b">
+        <span style="color:#64748b">⏳ Carregando código...</span>
+      </div>
     </div>
 
     <div class="alert">
@@ -315,22 +317,26 @@
     <ol class="steps">
       <li>
         <div class="step-num">1</div>
-        <div>Abra o painel do Mercado Livre em <strong>logistics.adminml.com</strong> e faça login normalmente.</div>
+        <div>Arraste o botão <strong>⏱ TMC Monitor</strong> para a barra de favoritos.</div>
       </li>
       <li>
         <div class="step-num">2</div>
-        <div>Clique no favorito <strong>⏱ TMC Monitor</strong> na barra de favoritos.</div>
+        <div>Abra o painel do Mercado Livre em <strong>envios.adminml.com</strong> e faça login normalmente.</div>
       </li>
       <li>
         <div class="step-num">3</div>
-        <div>Selecione a <strong>base</strong> no dropdown (padrão: SRJ3) e aguarde os dados carregarem.</div>
+        <div>Clique no favorito <strong>⏱ TMC Monitor</strong> na barra de favoritos.</div>
       </li>
       <li>
         <div class="step-num">4</div>
-        <div>O painel atualiza automaticamente a cada <strong>60 segundos</strong>. Clique em 🔄 para forçar atualização.</div>
+        <div>Selecione a <strong>base</strong> no dropdown (padrão: SRJ3) e aguarde os dados carregarem.</div>
       </li>
       <li>
         <div class="step-num">5</div>
+        <div>O painel atualiza automaticamente a cada <strong>60 segundos</strong>. Clique em 🔄 para forçar atualização.</div>
+      </li>
+      <li>
+        <div class="step-num">6</div>
         <div>Clique no favorito novamente para <strong>mostrar ou ocultar</strong> o painel a qualquer momento.</div>
       </li>
     </ol>
@@ -349,18 +355,23 @@
       <tbody>
         <tr>
           <td><span class="dot" style="background:#22c55e;"></span>Verde</td>
-          <td style="color:#22c55e;">≤ 30 min</td>
-          <td>No prazo — carregamento dentro do esperado</td>
+          <td style="color:#22c55e;">&lt; 20 min</td>
+          <td>No prazo — carregamento dentro do TMC</td>
         </tr>
         <tr>
           <td><span class="dot" style="background:#eab308;"></span>Amarelo</td>
-          <td style="color:#eab308;">31 – 45 min</td>
+          <td style="color:#eab308;">20 – 25 min</td>
           <td>Atenção — carregamento acima do ideal</td>
         </tr>
         <tr>
           <td><span class="dot" style="background:#ef4444;"></span>Vermelho</td>
-          <td style="color:#ef4444;">&gt; 45 min</td>
-          <td>Crítico — carregamento muito acima do limite</td>
+          <td style="color:#ef4444;">25 – 30 min</td>
+          <td>Crítico — risco de perder o TMC</td>
+        </tr>
+        <tr>
+          <td><span class="dot" style="background:#7c3aed;"></span>💀 Roxo</td>
+          <td style="color:#7c3aed;">≥ 30 min</td>
+          <td>Perdeu o TMC — ação imediata necessária</td>
         </tr>
       </tbody>
     </table>
@@ -386,11 +397,8 @@
     <p style="font-size:13px;color:#6e7681;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.8px;">Ciclos monitorados</p>
     <div class="ciclos-grid">
       <span class="ciclo-tag">AM1</span>
-      <span class="ciclo-tag">AM101</span>
       <span class="ciclo-tag">PM1</span>
-      <span class="ciclo-tag">PM101</span>
       <span class="ciclo-tag">SD</span>
-      <span class="ciclo-tag">SD101</span>
       <span class="ciclo-tag">CHP</span>
     </div>
   </div>
@@ -403,17 +411,35 @@
 </footer>
 
 <script>
-  // ⚠️ Troque pelo seu usuário real do GitHub se necessário
-  var JSDELIVR_URL = 'https://cdn.jsdelivr.net/gh/kelvinkennedyfs-bit/tmc-monitor@main/tmc.js';
+  fetch('tmc.js?v=' + Date.now())
+    .then(function(r) {
+      if (!r.ok) throw new Error('tmc.js não encontrado (HTTP ' + r.status + ')');
+      return r.text();
+    })
+    .then(function(codigo) {
+      function utf8ToBase64(str) {
+        return btoa(unescape(encodeURIComponent(str)));
+      }
+      var b64 = utf8ToBase64(codigo);
+      var bkm = "javascript:(function(){try{" +
+                "var s=document.createElement('script');" +
+                "s.textContent=decodeURIComponent(escape(atob('" + b64 + "')));" +
+                "document.documentElement.appendChild(s);s.remove();" +
+                "}catch(e){alert('Erro TMC: '+e.message);}})();";
 
-  var bookmarkletCode =
-    '(function(){' +
-      'var s=document.createElement(\'script\');' +
-      's.src=\'' + JSDELIVR_URL + '?v=\'+Date.now();' +
-      'document.head.appendChild(s);' +
-    '})();';
+      var btn = document.getElementById('bm-link');
+      btn.href = bkm;
+      btn.classList.remove('loading');
 
-  document.getElementById('bm-link').href = 'javascript:' + bookmarkletCode;
+      var sizeKB = (bkm.length / 1024).toFixed(1);
+      document.getElementById('bm-info').innerHTML =
+        '<div class="bm-info-line">Bookmarklet v1.0 pronto — ' + sizeKB + ' KB</div>' +
+        '<div class="bm-info-line">Código inline · sem CDN · sem bloqueio de CSP ✅</div>';
+    })
+    .catch(function(err) {
+      document.getElementById('bm-info').innerHTML =
+        '<div class="bm-info-line err">' + err.message + '</div>';
+    });
 </script>
 
 </body>
