@@ -413,7 +413,7 @@
 <script>
   fetch('tmc.js?v=' + Date.now())
     .then(function(r) {
-      if (!r.ok) throw new Error('tmc.js não encontrado (HTTP ' + r.status + ')');
+      if (!r.ok) throw new Error('tmc.js HTTP ' + r.status);
       return r.text();
     })
     .then(function(codigo) {
@@ -421,11 +421,11 @@
         return btoa(unescape(encodeURIComponent(str)));
       }
       var b64 = utf8ToBase64(codigo);
-      var bkm = "javascript:(function(){try{" +
-                "var s=document.createElement('script');" +
-                "s.textContent=decodeURIComponent(escape(atob('" + b64 + "')));" +
-                "document.documentElement.appendChild(s);s.remove();" +
-                "}catch(e){alert('Erro TMC: '+e.message);}})();";
+      var bkm = "javascript:(function(){" +
+                "try{" +
+                "Function(decodeURIComponent(escape(atob('" + b64 + "'))))();" +
+                "}catch(e){alert('Erro TMC: '+e.message);}" +
+                "})();";
 
       var btn = document.getElementById('bm-link');
       btn.href = bkm;
@@ -434,13 +434,10 @@
       var sizeKB = (bkm.length / 1024).toFixed(1);
       document.getElementById('bm-info').innerHTML =
         '<div class="bm-info-line">Bookmarklet v1.0 pronto — ' + sizeKB + ' KB</div>' +
-        '<div class="bm-info-line">Código inline · sem CDN · sem bloqueio de CSP ✅</div>';
+        '<div class="bm-info-line">Código inline · sem CDN · sem CSP ✅</div>';
     })
     .catch(function(err) {
       document.getElementById('bm-info').innerHTML =
         '<div class="bm-info-line err">' + err.message + '</div>';
     });
 </script>
-
-</body>
-</html>
